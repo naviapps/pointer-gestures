@@ -4,7 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools import docs as documentation
+from tools._tooling import load
+
+documentation = load("sdk_checks")
 
 
 class DeclarationDocumentationTests(unittest.TestCase):
@@ -18,17 +20,17 @@ class DeclarationDocumentationTests(unittest.TestCase):
                 "pathComponents": ["State", "update(_:now:)"],
             }
             for comment in [{}, {"docComment": {"lines": [{"text": "   "}]}}]:
-                with self.subTest(comment=comment):
-                    self.assertEqual(
-                        documentation.undocumented_symbols(
-                            {"symbols": [dict(symbol, **comment)]}, sources
-                        ),
-                        ["State.update(_:now:)"],
+                with (
+                    self.subTest(comment=comment),
+                    self.assertRaisesRegex(ValueError, r"State\.update\(_:now:\)"),
+                ):
+                    documentation._validate_declaration_docs(
+                        sources, [{"symbols": [dict(symbol, **comment)]}]
                     )
             symbol["docComment"] = {
                 "lines": [{"text": "Submit state at absolute monotonic nanoseconds."}]
             }
-            self.assertEqual(documentation.undocumented_symbols({"symbols": [symbol]}, sources), [])
+            documentation._validate_declaration_docs(sources, [{"symbols": [symbol]}])
 
     def test_imported_help_and_standard_witnesses_are_not_owned_contracts(self):
         def symbol(path, kind="swift.method", title="run()"):
@@ -52,7 +54,7 @@ class DeclarationDocumentationTests(unittest.TestCase):
                     {"kind": {"identifier": "swift.method"}, "pathComponents": ["Imported"]},
                 ]
             }
-            self.assertEqual(documentation.undocumented_symbols(graph, sources), [])
+            documentation._validate_declaration_docs(sources, [graph])
 
 
 if __name__ == "__main__":

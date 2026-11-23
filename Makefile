@@ -8,7 +8,7 @@ check: check-source test check-consumer
 
 check-source: lint test-rust test-ffi test-managed
 
-check-distribution: lint check-tools check-native check-docs test-ffi build-release
+check-distribution: check-tools check-native check-docs build-release
 
 check-consumer:
 	python3 -m tools.consumer
@@ -24,9 +24,9 @@ check-tools:
 
 check-docs:
 	RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked --offline
-	python3 -m tools.docs
+	mise run sdk-tooling -- docs
 
-check-native: test-rust
+check-native:
 	python3 -m tools.native --verify
 
 test-rust:
@@ -81,10 +81,10 @@ build-release:
 	swift build -c release $(SWIFT_STRICT_FLAGS)
 
 format:
-	mise exec -- python3 -B tools/quality.py format --dotnet
+	mise run format
 
 lint:
-	mise exec -- python3 -B tools/quality.py check --dotnet
+	mise run lint
 
 test:
 	swift test $(SWIFT_STRICT_FLAGS)

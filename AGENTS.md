@@ -1,10 +1,10 @@
 # SDK development
 
 This repository owns independent recognition and rendering libraries, their native
-adapters, build tools and acceptance fixtures. Keep reusable mechanisms here and
-product policy, permissions onboarding, application commands and persistence in hosts. The
-optional macOS and Windows rendering adapters own overlay resources; hosts explicitly
-activate them and supply appearance policy.
+adapters, artifact policy and acceptance fixtures. SDK Tooling owns shared build
+and verification mechanisms. Hosts own permissions onboarding, application commands
+and persistence. The optional macOS and Windows rendering adapters own overlay
+resources; hosts explicitly activate them and supply appearance policy.
 Read README.md and the affected Sources/*/*.docc catalog before API changes.
 
 Use Git on main. Keep unfinished edits in the working tree; publish coherent,

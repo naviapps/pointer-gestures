@@ -455,6 +455,8 @@ mise exec -- make check
 ```
 
 Run `mise run lint` before builds or `mise run format` to format owned source.
+These tasks use the public SDK Tooling revision pinned in
+[`mise.toml`](mise.toml). The first run downloads it without GitHub credentials.
 The quality checks exclude vendored code, native artifacts and original notices.
 
 `make check` runs source lint, Rust tests and Clippy, strict Swift tests and
@@ -464,9 +466,10 @@ for both the native and Web workspaces.
 
 ### Distribution verification
 
-The distribution checks use the private `naviapps/sdk-tooling` repository. For
-local maintainer checks, prepare a clean SDK Tooling checkout at the commit in
-[`tools/tooling-sources.json`](tools/tooling-sources.json) and set its absolute path:
+The [distribution plan](sdk-distribution.toml) defines the hosted acceptance
+commands. For local native or Web distribution checks, prepare a clean checkout
+of [SDK Tooling](https://github.com/naviapps/sdk-tooling) at the revision pinned
+by `tasks.sdk-tooling` in [`mise.toml`](mise.toml) and set its absolute path:
 
 ```sh
 export NAVI_SDK_TOOLING_SOURCE=/path/to/sdk-tooling
