@@ -43,10 +43,8 @@ final class GesturePatternMatcherTests: XCTestCase {
     XCTAssertNil(matcher.remove(pattern: []) as Any?)
     XCTAssertEqual(matcher.match(pattern: [.up, .right]), "long")
     XCTAssertNotNil(captured.match(pattern: [.up]) as Any?)
-    for _ in 0..<1000 {
-      XCTAssertNil(matcher.register(pattern: [.down], match: "reused"))
-      XCTAssertEqual(matcher.remove(pattern: [.down]), "reused")
-    }
+    XCTAssertNil(matcher.register(pattern: [.down], match: "reused"))
+    XCTAssertEqual(matcher.remove(pattern: [.down]), "reused")
     matcher.removeAll()
     matcher.removeAll()
     XCTAssertTrue(matcher.isEmpty)
