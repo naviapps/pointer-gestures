@@ -4,7 +4,7 @@ ARTIFACTS := $(CURDIR)/Artifacts
 .DEFAULT_GOAL := check
 .PHONY: check check-tools check-docs check-native check-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-types check-web-reproducibility check-web-browser build build-release format lint test
 
-check: lint check-tools check-native check-docs check-consumer test-ffi build build-release test
+check: lint check-tools check-native check-docs check-consumer test-ffi build-release test
 
 check-consumer:
 	python3 -m tools.consumer
@@ -24,7 +24,6 @@ check-docs:
 
 check-native:
 	python3 -m tools.native --verify
-	cargo fmt --all --check
 	cargo test --workspace --locked --offline
 	cargo clippy --workspace --all-targets --locked --offline -- -D warnings
 
@@ -50,7 +49,6 @@ check-windows:
 
 # Web tools and dependencies remain independent of native consumer validation.
 check-web:
-	cargo fmt --manifest-path bindings/web/rust/Cargo.toml --check
 	cargo test --manifest-path bindings/web/rust/Cargo.toml --locked --offline
 	cargo clippy --manifest-path bindings/web/rust/Cargo.toml --all-targets --features web --locked --offline -- -D warnings
 	python3 -m tools.web

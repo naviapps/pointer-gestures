@@ -330,9 +330,8 @@ multi-monitor or mixed-DPI hardware support.
 
 ## Native host gate
 
-GitHub Actions uses a Windows x64 runner. The full Windows gate requires the
-pinned tooling to be publicly accessible. For x64 emulation on an owned Windows
-ARM64 machine, run:
+GitHub Actions uses a Windows x64 runner and fetches the pinned SDK Tooling
+revision. For x64 emulation on an owned Windows ARM64 machine, run:
 
 ```powershell
 python -m tools.native_host --architecture arm64 --tooling-source $toolingSource --tooling-revision $toolingRevision

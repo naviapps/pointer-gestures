@@ -157,7 +157,7 @@ from `maximumPoints`, including when both deadlines are disabled.
 
 ## Build and verify
 
-These are SDK development commands. Clone the authenticated
+These are SDK development commands. Clone the
 [source repository](https://github.com/naviapps/pointer-gestures) and run them from
 its root; the generated consumer package does not contain build tools or manifests.
 Prepare the pinned tools using the
@@ -166,9 +166,9 @@ them with `mise exec --` when running the commands below.
 
 Use the repository's pinned Rust compiler and preinstall `wasm32-unknown-unknown`,
 `wasm-bindgen-cli` 0.2.104 and the Node.js and TypeScript versions in `mise.toml`.
-Install the CLI in a task-owned tool directory
-when it is not already available. Fetch the separate locked dependencies once when
-network access is intended:
+Install the CLI in a task-owned tool directory when it is not already available.
+The GitHub macOS job downloads the official ARM64 archive and checks its SHA-256.
+Fetch the separate locked dependencies once when network access is intended:
 
 ```sh
 cargo fetch --manifest-path bindings/web/rust/Cargo.toml --locked

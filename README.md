@@ -55,7 +55,7 @@ inputs; `.native-build` and `.web-build` are ignored developer output.
 
 ## Swift installation
 
-Configure authenticated Git access to this private repository, then add one package:
+Add the public package at a published commit:
 
 ```swift
 .package(
@@ -468,8 +468,9 @@ excludes vendored code, native artifacts and original notices.
 When native sources change, run `mise exec -- make native` before verification.
 It rebuilds the independent macOS frameworks using the
 [shared native artifact mechanism](https://github.com/naviapps/sdk-tooling/blob/main/docs/REFERENCE.md#native-artifacts-and-provenance).
-`make check` covers native
-verification, Rust, Swift Debug/Release/tests, C ownership and API documentation.
+`make check` covers native verification, Rust, Swift tests and Release builds,
+C ownership and API documentation. `make lint` checks Rust formatting for
+both the native and Web workspaces.
 It also builds and runs independent Swift consumers against the existing frameworks;
 verification and [consumer checks](https://github.com/naviapps/sdk-tooling/blob/main/docs/REFERENCE.md#consumer-verification)
 do not regenerate them. `make check-dotnet` builds
@@ -516,12 +517,12 @@ fixtures require explicit opt-in.
 ### Test responsibilities
 
 See [AGENTS.md](https://github.com/naviapps/pointer-gestures/blob/main/AGENTS.md#test-ownership)
-for test ownership. GitHub Actions uses Xcode 27 for Rust and strict Swift tests
-and Windows x64 for Rust and tooling tests. The full gates add standalone native
-and managed clients plus Web package and Chromium checks. Full checks require the
-pinned tooling to be accessible anonymously and run automatically when the SDK
-is public. Run `make check` for Swift/common changes, `make check-web` for Web
-changes, and use an owned desktop for explicit native input and rendering probes.
+for test ownership. GitHub Actions runs Rust and strict Swift tests on Xcode 27,
+validates the Web package in Chromium, and checks C, .NET and installed NuGet
+consumers on Windows x64. The workflows run on pushes and pull requests targeting
+`main`, with manual runs available. Run `make check` for Swift/common changes and
+`make check-web` for Web changes. Use an owned desktop for native input and rendering
+probes.
 
 ## Shared tail updates and Windows observations
 
