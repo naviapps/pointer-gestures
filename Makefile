@@ -4,11 +4,15 @@ SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-a
 ARTIFACTS := $(CURDIR)/Artifacts
 
 .DEFAULT_GOAL := check
-.PHONY: check check-source test-managed test-rust check-distribution test-distribution-tools check-docs check-native test-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release clean format lint test
+.PHONY: check check-source check-ci-source test-managed test-rust check-distribution test-distribution-tools check-docs check-native test-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release clean format lint test
 
 check: check-source test test-consumer
 
 check-source: lint test-rust test-ffi test-managed
+
+check-ci-source: check-source
+	cargo fetch --locked --manifest-path bindings/web/rust/Cargo.toml
+	$(MAKE) check-web-source
 
 check-distribution: test-distribution-tools check-native check-docs build-release
 
