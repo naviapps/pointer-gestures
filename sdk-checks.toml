@@ -8,3 +8,10 @@ executables = [
   "RenderingMacOSConsumer",
 ]
 verify_dependencies = true
+
+[windows_bindings]
+packages = ["pointer-gesture-recognition-ffi", "pointer-gesture-rendering-ffi"]
+projects = [
+  "bindings/dotnet/tests/NaviApps.PointerGestures.Recognition.Tests/NaviApps.PointerGestures.Recognition.Tests.csproj",
+  "bindings/dotnet/tests/NaviApps.PointerGestures.Rendering.Tests/NaviApps.PointerGestures.Rendering.Tests.csproj",
+]

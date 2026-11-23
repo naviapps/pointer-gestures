@@ -21,19 +21,4 @@ jobs:
           persist-credentials: false
       - uses: naviapps/sdk-tooling/.github/actions/test-rust-windows@main
         with:
-          dotnet: "true"
-      - name: Build native binding libraries
-        run: cargo build --locked -p pointer-gesture-recognition-ffi -p pointer-gesture-rendering-ffi
-      - name: Test .NET recognition and rendering
-        run: |
-          $native = Join-Path $PWD "target/$env:CARGO_BUILD_TARGET/debug"
-          foreach ($kind in @('Recognition', 'Rendering')) {
-            $project = "NaviApps.PointerGestures.$kind.Tests"
-            $output = Join-Path $env:RUNNER_TEMP $project
-            dotnet build "bindings/dotnet/tests/$project/$project.csproj" --configuration Release --output $output
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-            Copy-Item (Join-Path $native 'pointer_gesture_recognition_ffi.dll') $output
-            Copy-Item (Join-Path $native 'pointer_gesture_rendering_ffi.dll') $output
-            dotnet (Join-Path $output "$project.dll")
-            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          }
+          test-bindings: "true"
