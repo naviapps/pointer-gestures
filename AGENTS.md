@@ -32,8 +32,9 @@ Rebuild affected frameworks and provenance after native/input changes. Swift con
 need neither Rust nor Python. Maintain SDK APIs, README, DocC and consumers together;
 preserve dated release evidence.
 
-Run make check for source/native/Swift/docs/ABI gates and make check-dotnet for managed
-bindings or examples. Use injected effects and owned native fixtures; compilation,
+Run `make check` for lint, Rust and Swift tests, standalone Swift consumers, C ABI
+fixtures and managed compilation. Use the distribution setup in README.md for
+receipt, DocC, .NET package and Web checks. Use injected effects and owned native fixtures. Compilation,
 local tests, actual OS effects and exact-source CI are separate evidence. Do not
 repeat unchanged successful checks or add tests that freeze private helper spelling.
 

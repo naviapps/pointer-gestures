@@ -452,21 +452,41 @@ mise trust mise.toml
 mise install
 mise exec -- cargo fetch --locked
 mise exec -- make check
-mise exec -- make check-dotnet
 ```
 
 Run `mise run lint` before builds or `mise run format` to format owned source.
 The quality checks exclude vendored code, native artifacts and original notices.
 
-When native sources change, run `mise exec -- make native` before verification.
-It rebuilds the independent macOS frameworks and records the sources, toolchain,
-dependency provenance and exact artifact hashes in the build receipts.
-`make check` covers native verification, Rust, Swift tests and Release builds,
-C ownership and API documentation. `make lint` checks Rust formatting for
-both the native and Web workspaces.
-It also builds and runs independent Swift consumers against the existing frameworks
-without regenerating the frameworks. `make check-dotnet` builds
-separate host-native Rust libraries and runs managed fixtures and the README examples.
+`make check` runs source lint, Rust tests and Clippy, strict Swift tests and
+standalone Swift consumers against the tracked frameworks. It also runs the C
+ABI fixtures and builds the .NET test projects. `make lint` covers Rust formatting
+for both the native and Web workspaces.
+
+### Distribution verification
+
+The distribution checks use the private `naviapps/sdk-tooling` repository. For
+local maintainer checks, prepare a clean SDK Tooling checkout at the commit in
+[`tools/tooling-sources.json`](tools/tooling-sources.json) and set its absolute path:
+
+```sh
+export NAVI_SDK_TOOLING_SOURCE=/path/to/sdk-tooling
+mise exec -- make check-distribution
+```
+
+To run the hosted macOS and Windows distribution checks, set `SDK_COMMIT_SHA`
+to the full SDK commit SHA from `main` and dispatch the workflow:
+
+```sh
+gh workflow run check-sdk-distribution.yml -R naviapps/sdk-tooling \
+  -f sdk=pointer-gestures -f revision="$SDK_COMMIT_SHA"
+```
+
+When native sources change, run `mise exec -- make native` to rebuild the
+independent macOS frameworks and record their sources, toolchain, dependency
+provenance and hashes. `make check-distribution` checks the existing native
+receipts, C ownership, a Swift release build and API documentation.
+`make check-dotnet` builds host-native Rust libraries and runs the managed
+fixtures and README examples.
 Run Python modules from the repository root. `python3 -m tools.native --sdk recognition`
 selects one framework; omitting `--sdk` handles both. `python3 -m tools.windows --help`
 describes native Windows build, inspection, C ownership and clean package consumers.
@@ -480,10 +500,9 @@ Each macOS framework contains the original notice bodies verbatim in
 remain under `ThirdParty/`; native packages retain the required notices for their runtimes.
 
 Use Git on main. Keep related edits together, validate them, then
-publish one coherent main unit. Preserve published commits and consumer pins. SDK
-workflows use GitHub-hosted runners for source and package checks. Retain upstream
-runtime notices with redistributed artifacts. Product source, QA data and credentials
-never belong in this reusable SDK repository.
+publish one coherent main unit. Preserve published commits and consumer pins.
+Retain upstream runtime notices with redistributed artifacts. Keep product source,
+QA data and credentials outside this repository.
 
 ### Local .NET package checks
 
@@ -510,12 +529,12 @@ fixtures require explicit opt-in.
 
 See [AGENTS.md](https://github.com/naviapps/pointer-gestures/blob/main/AGENTS.md#test-ownership)
 for test ownership. GitHub Actions runs the same strict Swift tests and standalone
-Swift consumers on macOS 26 and 27. A separate Xcode 27 job checks SDK distribution,
-including the Web package in Chromium. The Windows x64 job checks C, .NET and
-installed NuGet consumers. The workflows run on pushes and pull requests targeting
-`main`, with manual runs available. Run `make check` for Swift/common changes and
-`make check-web` for Web changes. Use an owned desktop for native input and rendering
-probes.
+Swift consumers on macOS 26 and 27. The Windows x64 job runs Rust and .NET binding
+tests. These workflows run on pushes and pull requests targeting `main`.
+The maintainer distribution workflow also checks C, installed NuGet consumers and
+the Web package in Chromium. Run `make check` for Swift and shared code.
+Use the distribution setup for `make check-web`. Use an owned desktop for
+native input and rendering probes.
 
 ## Shared tail updates and Windows observations
 

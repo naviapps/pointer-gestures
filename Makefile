@@ -2,9 +2,11 @@ SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-a
 ARTIFACTS := $(CURDIR)/Artifacts
 
 .DEFAULT_GOAL := check
-.PHONY: check check-distribution check-tools check-docs check-native check-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-types check-web-reproducibility check-web-browser build build-release format lint test
+.PHONY: check check-source test-managed test-rust check-distribution check-tools check-docs check-native check-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-types check-web-reproducibility check-web-browser build build-release format lint test
 
-check: check-distribution test check-consumer
+check: check-source test check-consumer
+
+check-source: lint test-rust test-ffi test-managed
 
 check-distribution: lint check-tools check-native check-docs test-ffi build-release
 
@@ -24,8 +26,10 @@ check-docs:
 	RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked --offline
 	python3 -m tools.docs
 
-check-native:
+check-native: test-rust
 	python3 -m tools.native --verify
+
+test-rust:
 	cargo test --workspace --locked --offline
 	cargo clippy --workspace --all-targets --locked --offline -- -D warnings
 
@@ -82,3 +86,7 @@ lint:
 
 test:
 	swift test $(SWIFT_STRICT_FLAGS)
+
+test-managed:
+	dotnet build --configuration Release bindings/dotnet/tests/NaviApps.PointerGestures.Recognition.Tests/NaviApps.PointerGestures.Recognition.Tests.csproj
+	dotnet build --configuration Release bindings/dotnet/tests/NaviApps.PointerGestures.Rendering.Tests/NaviApps.PointerGestures.Rendering.Tests.csproj

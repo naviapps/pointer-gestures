@@ -10,8 +10,10 @@ The optional cargo-xwin backend manages its Microsoft CRT/SDK cache separately.
 
 See the [SDK overview](../README.md) for consumer installation and portable API
 examples and the [development setup](../README.md#development-and-acceptance)
-for pinned tools and offline use. Run source commands with the
-prepared tools on `PATH`, or prefix them with `mise exec --`.
+for pinned tools and offline use. The build and package commands below require
+the [distribution tooling checkout](../README.md#distribution-verification).
+In PowerShell, set `$env:NAVI_SDK_TOOLING_SOURCE` to its absolute path.
+Run source commands with the prepared tools on `PATH`, or prefix them with `mise exec --`.
 
 ## Requirements and validation boundaries
 
