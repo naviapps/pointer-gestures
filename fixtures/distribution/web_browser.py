@@ -58,14 +58,18 @@ def main():
     )
     temporary = Path(os.environ.get("RUNNER_TEMP") or tempfile.gettempdir())
     artifacts = args.artifacts
+    require(temporary.is_absolute() and artifacts.is_absolute(), "Expected absolute paths")
+    temporary, artifacts = temporary.resolve(), artifacts.resolve()
     require(
-        temporary.is_absolute()
-        and artifacts.is_absolute()
-        and not temporary.resolve().is_relative_to(root)
-        and not artifacts.resolve().is_relative_to(root),
-        "Expected absolute temporary and artifact paths outside source",
+        not temporary.is_relative_to(root) and not artifacts.is_relative_to(root),
+        "Expected temporary and artifact paths outside source",
     )
     package = (args.package or root / ".web-build/package").resolve(strict=True)
+    output = artifacts / "web-browser"
+    require(
+        not temporary.is_relative_to(package) and not output.is_relative_to(package),
+        "Expected temporary and artifact paths outside the SDK package",
+    )
     source = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     require(source == os.environ.get("GITHUB_SHA", source), "Checkout differs from Actions source")
     expected = args.source_revision or source
@@ -100,7 +104,6 @@ def main():
     node_path, npm_path = shutil.which("node"), shutil.which("npm")
     require(node_path and npm_path, "Run with the Node and npm versions selected by mise")
     node, npm, python = Path(node_path), Path(npm_path), Path(sys.executable)
-    output = artifacts / "web-browser"
     output.mkdir(parents=True)
     before = {str(path): digest(path) for path in (node, npm, python)}
     summary = {
@@ -136,11 +139,6 @@ def main():
                 npm_config_fetch_timeout="60000",
                 PLAYWRIGHT_BROWSERS_PATH=str(work / "browsers"),
                 PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD="1",
-                POINTER_GESTURES_WEB_PACKAGE=str(package),
-                POINTER_GESTURES_WEB_EXPECTED_SOURCE=expected,
-                POINTER_GESTURES_BROWSER_FIXTURE_SOURCE=source,
-                POINTER_GESTURES_BROWSER_WORK=str(work),
-                POINTER_GESTURES_BROWSER_ARTIFACTS=str(output),
             )
             versions = {
                 name: subprocess.check_output([path, "--version"], env=env, text=True).strip()
@@ -189,7 +187,20 @@ def main():
             )
             summary["browserRun"] = True
             run(
-                [node, root / "bindings/web/tests/web-browser-consumer.mjs"],
+                [
+                    node,
+                    root / "bindings/web/tests/web-browser-consumer.mjs",
+                    "--package",
+                    package,
+                    "--work",
+                    work,
+                    "--artifacts",
+                    output,
+                    "--sdk-source-revision",
+                    expected,
+                    "--fixture-source-revision",
+                    source,
+                ],
                 root,
                 env,
                 output / "browser.log",

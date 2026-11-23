@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cp, mkdtemp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const fixtures = dirname(fileURLToPath(import.meta.url));
@@ -81,11 +81,6 @@ try {
   assert.ok(typeTrace.includes(
     `Module name '@naviapps/pointer-gestures' was successfully resolved to '${resolvedTypes}'`,
   ), "TypeScript did not resolve the installed package declaration export");
-  if (process.env.POINTER_GESTURES_TYPESCRIPT_TRACE) {
-    const tracePath = process.env.POINTER_GESTURES_TYPESCRIPT_TRACE;
-    assert.ok(isAbsolute(tracePath), "TypeScript trace destination must be absolute");
-    await writeFile(tracePath, typeTrace, { flag: "wx" });
-  }
   const typeScript = {
     version,
     compilerVersion,

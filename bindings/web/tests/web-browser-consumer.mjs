@@ -4,18 +4,45 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { cp, mkdir, readFile, realpath, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { parseArgs } from "node:util";
 
 const fixtures = dirname(fileURLToPath(import.meta.url));
-const root = resolve(fixtures, "../../..");
+const root = await realpath(resolve(fixtures, "../../.."));
 const fixture = join(fixtures, "browser");
-const packageDirectory = resolve(process.env.POINTER_GESTURES_WEB_PACKAGE);
-const work = resolve(process.env.POINTER_GESTURES_BROWSER_WORK);
-const output = resolve(process.env.POINTER_GESTURES_BROWSER_ARTIFACTS);
+const { values } = parseArgs({
+  options: {
+    package: { type: "string" },
+    work: { type: "string" },
+    artifacts: { type: "string" },
+    "sdk-source-revision": { type: "string" },
+    "fixture-source-revision": { type: "string" },
+  },
+});
+const [packageDirectory, work, output] = await Promise.all(
+  ["package", "work", "artifacts"].map((name) => {
+    const path = values[name];
+    assert.ok(path && isAbsolute(path), `--${name} must be an absolute path`);
+    return realpath(path);
+  }),
+);
+const sdkSourceRevision = values["sdk-source-revision"];
+const fixtureSourceRevision = values["fixture-source-revision"];
+for (const [name, revision] of [
+  ["sdk-source-revision", sdkSourceRevision],
+  ["fixture-source-revision", fixtureSourceRevision],
+]) assert.match(revision ?? "", /^[a-f0-9]{40}$/, `--${name} must be a full commit SHA`);
+const isOutside = (parent, child) => {
+  const path = relative(parent, child);
+  return path === ".." || path.startsWith(`..${sep}`) || isAbsolute(path);
+};
+for (const directory of [work, output]) {
+  assert.ok(isOutside(root, directory), "Temporary and artifact paths must be outside source");
+  assert.ok(isOutside(packageDirectory, directory), "Temporary and artifact paths must be outside the SDK package");
+}
 const tooling = join(work, "tooling");
 const consumer = join(work, "consumer");
-const expectedSource = process.env.POINTER_GESTURES_WEB_EXPECTED_SOURCE;
 const specification = JSON.parse(await readFile(join(fixture, "package.json"), "utf8"));
 const sha = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const json = async (path, value) => writeFile(path, JSON.stringify(value, null, 2) + "\n");
@@ -26,9 +53,6 @@ const npm = (args, cwd) => execFileSync(process.env.NPM_BIN, args, {
   timeout: 60000,
   stdio: ["ignore", "pipe", "inherit"],
 });
-for (const path of [work, output, packageDirectory]) assert.ok(isAbsolute(path));
-assert.ok(relative(root, output).startsWith(".."), "Artifacts must be outside source");
-assert.ok(relative(root, work).startsWith(".."), "Temporary client must be outside source");
 await mkdir(consumer);
 const packed = join(work, "packed");
 await mkdir(packed);
@@ -41,7 +65,7 @@ await json(join(consumer, "package.json"), { name: "pointer-browser-consumer", p
 npm(["install", "--ignore-scripts", "--offline", "--no-audit", "--no-fund", "--package-lock=false", tarball], consumer);
 const installed = join(consumer, "node_modules/@naviapps/pointer-gestures");
 const provenance = JSON.parse(await readFile(join(installed, "provenance.json"), "utf8"));
-assert.equal(provenance.sourceRevision, expectedSource);
+assert.equal(provenance.sourceRevision, sdkSourceRevision);
 for (const [name, checksum] of Object.entries(provenance.outputs)) {
   const path = resolve(installed, name);
   assert.ok(relative(installed, path) && !relative(installed, path).startsWith(".."));
@@ -83,7 +107,7 @@ let browser;
 const results = [];
 const receipt = {
   result: "failed",
-  fixtureSourceRevision: process.env.POINTER_GESTURES_BROWSER_FIXTURE_SOURCE,
+  fixtureSourceRevision,
   sdkSourceRevision: provenance.sourceRevision,
   packageProvenanceSHA256: sha(await readFile(join(installed, "provenance.json"))),
   tarballSHA256: sha(await readFile(tarball)),
