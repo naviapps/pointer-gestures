@@ -8,9 +8,8 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 
-const fixtures = dirname(fileURLToPath(import.meta.url));
-const root = await realpath(resolve(fixtures, "../../.."));
-const fixture = join(fixtures, "browser");
+const root = await realpath(resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const fixture = join(root, "fixtures", "acceptance", "browser");
 const { values } = parseArgs({
   options: {
     package: { type: "string" },

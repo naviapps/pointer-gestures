@@ -177,7 +177,7 @@ mise run sdk-tooling -- python -m distribution.npm_package --verify
 mise exec -- cargo test --manifest-path bindings/web/rust/Cargo.toml --locked --offline
 mise exec -- cargo clippy --manifest-path bindings/web/rust/Cargo.toml --all-targets --features web --locked --offline -- -D warnings
 mise exec -- node --test bindings/web/tests/*.test.mjs
-mise exec -- node bindings/web/tests/web-consumer.mjs
+mise exec -- node distribution/verify_web_consumer.mjs
 ```
 
 The package builder runs offline with the exact lockfile and matching CLI. It stages the
@@ -189,7 +189,8 @@ The source revision identifies the Git HEAD at build start, or the controller's
 frozen commit identity when Git metadata is omitted. For local uncommitted edits,
 HEAD identifies the baseline; the input hashes identify the actual build bytes. Identical inputs and toolchain should reproduce the
 same runtime bytes; verify the hashes after copying. Tests execute the generated Wasm
-in Node. Browser integration, HTTP CSP, pointer capture, loading and accessibility need
+in Node using binding tests in `bindings/web/tests`. Browser integration, HTTP CSP,
+pointer capture, loading and accessibility need
 separate consumer browser checks. Run the root `make check` for native regressions;
 this nested workspace does not alter native Cargo.lock or framework receipts.
 
@@ -204,7 +205,8 @@ dependencies before the offline check.
 
 `make check-web` also packs the generated directory with npm and installs that tarball
 offline into an unrelated temporary client with an empty npm cache and lifecycle
-scripts disabled. The client imports the package by name, resolves its explicit Wasm
+scripts disabled. The clients under `fixtures/consumers/web` import the package
+by name. The Node client resolves its explicit Wasm
 and provenance exports, and executes recognition and rendering without a compiler or
 native-library search path. Every retained package output is checked after installation.
 The same installed client runs the TypeScript compiler pinned in `mise.toml` with
@@ -214,7 +216,7 @@ seven `@ts-expect-error` cases require invalid inputs and unsafe result use to f
 type checking. The fixture never executes. `make check-web-types` runs only the
 pack/install and static declaration checks against an existing generated package.
 Supply a different generated directory as the last argument to
-`node bindings/web/tests/web-consumer.mjs [--types-only]` when needed, or set `TSC_BIN` to the
+`node distribution/verify_web_consumer.mjs [--types-only]` when needed, or set `TSC_BIN` to the
 compiler executable. The fixture records the compiler's reported version. These
 acceptance tools are developer prerequisites. Ordinary consumers only need the
 generated package and their JS host.
@@ -252,7 +254,7 @@ state and Canvas pixels at 1000×760 and 390×844. Screenshots and traces suppor
 later visual inspection; pixel assertions do not replace that inspection.
 
 The gate uses Playwright 1.65.0 and Chromium 158.0.8127.18,
-revision 1254, pinned by `bindings/web/tests/browser/package-lock.json` and the
+revision 1254, pinned by `fixtures/acceptance/browser/package-lock.json` and the
 package's checked browser descriptor. The public npm integrity pins came from
 the [official registry](https://registry.npmjs.org/playwright/1.65.0); the browser
 version is documented in the [official release](https://github.com/microsoft/playwright/releases/tag/v1.65.0)

@@ -24,7 +24,7 @@ class PointerExportPolicyTests(unittest.TestCase):
                 (platform / "native.h").write_text(f"uint32_t {prefix}windows_abi_version(void);\n")
                 with patch.object(
                     windows_sdk,
-                    "builder",
+                    "ffi_product",
                     return_value=SimpleNamespace(package="ffi", library="ffi"),
                 ):
                     sdk = windows_sdk.WindowsSDK(root, kind)
@@ -71,7 +71,9 @@ class WindowsTargetSelectionTests(unittest.TestCase):
         (self.root / "mise.toml").write_text('[tools]\ndotnet = "10.0.403"\n')
         self.enterContext(
             patch.object(
-                windows_sdk, "builder", return_value=SimpleNamespace(package="ffi", library="ffi")
+                windows_sdk,
+                "ffi_product",
+                return_value=SimpleNamespace(package="ffi", library="ffi"),
             )
         )
         self.sdk = windows_sdk.WindowsSDK(self.root)

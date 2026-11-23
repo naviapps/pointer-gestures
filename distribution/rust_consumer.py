@@ -50,7 +50,7 @@ def verify_normal_graph(metadata, mode):
 def main():
     from sdk_tooling.adapters import load
 
-    load("installed_consumers").check_installed(
+    load("consumers.rust_c").check_installed(
         root=ROOT,
         git_url=URL,
         rust_packages=(RECOGNITION, RENDERING),

@@ -17,7 +17,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from sdk_tooling.adapters import load
-from sdk_tooling.native_plan import builder
+from sdk_tooling.xcframework import xcframework
 
 from .package_layout import KINDS, PackageLayout
 
@@ -278,7 +278,7 @@ class NuGetSDK:
 
 
 def macos_asset(root, kind):
-    native = builder(root, kind)
+    native = xcframework(root, kind)
     native.verify(inspect_native=sys.platform == "darwin")
     library = (
         native.artifact / "macos-arm64_x86_64" / (native.module + ".framework") / native.module

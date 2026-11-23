@@ -14,7 +14,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from sdk_tooling.adapters import load, support_inputs
-from sdk_tooling.native_plan import builder
+from sdk_tooling.native_plan import ffi_product
 
 from .nuget import NuGetSDK
 from .package_layout import KINDS, PackageLayout
@@ -69,9 +69,9 @@ class WindowsSDK:
         self.root = root.resolve()
         self.layout = PackageLayout(self.root, kind)
         self.ffi = self.layout.ffi
-        self.builder = builder(self.root, kind)
-        self.package = self.builder.package
-        self.library = self.builder.library
+        self.product = ffi_product(self.root, kind)
+        self.package = self.product.package
+        self.library = self.product.library
         self.symbols = public_exports(self.layout)
         self.csproj = self.layout.project
         self.id = self.csproj.stem
@@ -92,14 +92,14 @@ class WindowsSDK:
         subprocess.run([str(a) for a in args], cwd=self.root, env=self.env, check=True, **kwargs)
 
     def sources(self):
-        return self.builder.build_sources() | support_inputs(self.root)
+        return self.product.build_sources() | support_inputs(self.root)
 
     def rust(self):
         compiler = subprocess.check_output(
             ["rustc", "--version", "--verbose"], cwd=self.root, env=self.env, text=True
         )
-        if not compiler.startswith("rustc " + self.builder.compiler + " "):
-            raise ValueError("Preinstall pinned Rust " + self.builder.compiler)
+        if not compiler.startswith("rustc " + self.product.compiler + " "):
+            raise ValueError("Preinstall pinned Rust " + self.product.compiler)
         return compiler
 
     def check(self, check_rust=True):
@@ -217,7 +217,7 @@ class WindowsSDK:
             shutil.copyfile(self.root / "LICENSE", stage / "licenses/LICENSE")
 
         load("windows").build_library(
-            self.builder,
+            self.product,
             self.env,
             architecture="x64",
             output_root=self.native,
@@ -231,7 +231,7 @@ class WindowsSDK:
 
     def verify(self):
         directory, _ = load("windows").verify_artifact(
-            self.builder,
+            self.product,
             "x64",
             output_root=self.native,
             source_inputs=self.sources,

@@ -492,7 +492,7 @@ checks the existing native receipts, the distribution fixtures, a Swift release
 build and API documentation.
 `make check-dotnet` builds host-native Rust libraries and runs the managed
 fixtures and README examples.
-Run `mise run sdk-tooling -- native --product recognition` to select one framework.
+Run `mise run sdk-tooling -- xcframework --product recognition` to select one framework.
 `mise run sdk-tooling -- python -m distribution.windows_sdk --help`
 lists the Windows build, inspection, C and package consumer checks.
 Windows input and drawing probes require explicit opt-in in an owned isolated desktop.

@@ -7,11 +7,11 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const fixtures = dirname(fileURLToPath(import.meta.url));
+const fixtures = resolve(dirname(fileURLToPath(import.meta.url)), "../fixtures/consumers/web");
 const args = process.argv.slice(2);
 const typesOnly = args[0] === "--types-only";
 if (typesOnly) args.shift();
-assert.ok(args.length <= 1, "Usage: web-consumer.mjs [--types-only] [generated-package]");
+assert.ok(args.length <= 1, "Usage: verify_web_consumer.mjs [--types-only] [generated-package]");
 const directory = resolve(
   args[0] ?? process.env.POINTER_GESTURES_WEB_PACKAGE ?? ".web-build/package",
 );
@@ -97,7 +97,7 @@ try {
   // The installed client has no source checkout, compiler path or native-library override.
   const runtime = { ...userEnvironment, PATH: emptyPath, TMPDIR: work };
   if (!typesOnly) {
-    await cp(join(fixtures, "package-consumer.mjs"), join(consumer, "consumer.mjs"));
+    await cp(join(fixtures, "node", "consumer.mjs"), join(consumer, "consumer.mjs"));
     result = JSON.parse(run(process.execPath, ["consumer.mjs"], consumer, runtime));
   }
   const declaration = run(

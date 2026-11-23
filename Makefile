@@ -29,14 +29,14 @@ check-docs:
 	$(SDK_TOOLING) docs
 
 check-native:
-	$(SDK_TOOLING) native --verify
+	$(SDK_TOOLING) xcframework --verify
 
 test-rust:
 	cargo test --workspace --locked --offline
 	cargo clippy --workspace --all-targets --locked --offline -- -D warnings
 
 native:
-	$(SDK_TOOLING) native
+	$(SDK_TOOLING) xcframework
 
 # The maintained C callers use ASan; the prebuilt Rust frameworks do not.
 test-ffi:
@@ -59,14 +59,14 @@ check-windows:
 check-web: check-web-source
 	$(SDK_TOOLING) python -m distribution.npm_package
 	node --test bindings/web/tests/*.test.mjs
-	node bindings/web/tests/web-consumer.mjs
+	node distribution/verify_web_consumer.mjs
 
 check-web-source:
 	cargo test --manifest-path bindings/web/rust/Cargo.toml --locked --offline
 	cargo clippy --manifest-path bindings/web/rust/Cargo.toml --all-targets --features web --locked --offline -- -D warnings
 
 check-web-types:
-	node bindings/web/tests/web-consumer.mjs --types-only
+	node distribution/verify_web_consumer.mjs --types-only
 
 check-web-reproducibility:
 	$(SDK_TOOLING) python -m distribution.verify_web_reproducibility

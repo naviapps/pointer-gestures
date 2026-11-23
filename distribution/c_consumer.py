@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 
 from sdk_tooling.adapters import load
-from sdk_tooling.native_plan import builder
+from sdk_tooling.xcframework import xcframework
 
 from distribution.package_layout import KINDS
 
@@ -19,9 +19,9 @@ def main():
     )
     args = parser.parse_args()
 
-    check_installed = load("installed_consumers").check_installed
+    check_installed = load("consumers.rust_c").check_installed
     for kind in KINDS:
-        native = builder(ROOT, kind)
+        native = xcframework(ROOT, kind)
         framework = native.artifact / "macos-arm64_x86_64" / (native.module + ".framework")
         argv = ["--language", "c"]
         if args.revision is not None:

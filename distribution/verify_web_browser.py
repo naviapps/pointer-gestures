@@ -51,7 +51,7 @@ def main():
     parser.add_argument("--provenance-sha256", help="Expected SHA-256 of the package provenance")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    fixture = root / "bindings/web/tests/browser"
+    fixture = root / "fixtures/acceptance/browser"
     require(
         platform.system() == "Darwin" and platform.machine() == "arm64",
         "Browser acceptance requires a macOS ARM64 runner",
@@ -189,7 +189,7 @@ def main():
             run(
                 [
                     node,
-                    root / "bindings/web/tests/web-browser-consumer.mjs",
+                    root / "distribution/run_browser_acceptance.mjs",
                     "--package",
                     package,
                     "--work",

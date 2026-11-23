@@ -16,6 +16,7 @@ xcuserdata/
 
 /target/
 /bindings/web/rust/target/
+/fixtures/acceptance/browser/node_modules/
 /.web-build/
 /.native-build/
 /bindings/dotnet/**/bin/
