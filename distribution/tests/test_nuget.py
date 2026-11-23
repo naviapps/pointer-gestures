@@ -10,7 +10,60 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from distribution.nuget import NuGetSDK
+from distribution.nuget import NuGetSDK, candidate_feed
+from distribution.package_layout import KINDS
+
+
+class CandidateFeedTests(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        self.feed = self.root / "feed"
+        self.feed.mkdir()
+        self.version = "0.1.0-local.1"
+        self.recognition, self.rendering = (
+            self.feed / f"NaviApps.PointerGestures.{kind.title()}.{self.version}.nupkg"
+            for kind in KINDS
+        )
+
+    def test_failed_second_build_keeps_feed_unchanged_and_allows_retry(self):
+        previous = self.feed / "NaviApps.PointerGestures.Recognition.0.1.0-previous.nupkg"
+        previous.write_bytes(b"previous")
+        with self.assertRaisesRegex(ValueError, "rendering failed"):
+            with candidate_feed(self.root, self.feed, self.version, KINDS) as stage:
+                (stage / self.recognition.name).write_bytes(b"recognition")
+                raise ValueError("rendering failed")
+        self.assertEqual(list(self.feed.iterdir()), [previous])
+
+        with candidate_feed(self.root, self.feed, self.version, KINDS) as stage:
+            (stage / self.recognition.name).write_bytes(b"recognition")
+            (stage / self.rendering.name).write_bytes(b"rendering")
+            self.assertFalse(self.recognition.exists())
+            self.assertFalse(self.rendering.exists())
+        self.assertEqual(self.recognition.read_bytes(), b"recognition")
+        self.assertEqual(self.rendering.read_bytes(), b"rendering")
+        self.assertEqual(previous.read_bytes(), b"previous")
+
+    def test_late_destination_collision_preserves_the_other_publishers_package(self):
+        with self.assertRaises(FileExistsError):
+            with candidate_feed(self.root, self.feed, self.version, KINDS) as stage:
+                (stage / self.recognition.name).write_bytes(b"recognition")
+                (stage / self.rendering.name).write_bytes(b"rendering")
+                self.rendering.write_bytes(b"other publisher")
+        self.assertEqual(list(self.feed.iterdir()), [self.rendering])
+        self.assertEqual(self.rendering.read_bytes(), b"other publisher")
+
+    def test_interrupt_after_linking_leaves_no_incomplete_candidate(self):
+        link = Path.hardlink_to
+
+        def interrupt(destination, staged):
+            link(destination, staged)
+            raise KeyboardInterrupt
+
+        with patch.object(Path, "hardlink_to", interrupt), self.assertRaises(KeyboardInterrupt):
+            with candidate_feed(self.root, self.feed, self.version, KINDS) as stage:
+                (stage / self.recognition.name).write_bytes(b"recognition")
+                (stage / self.rendering.name).write_bytes(b"rendering")
+        self.assertEqual(list(self.feed.iterdir()), [])
 
 
 class WindowsPackageWorkspaceTests(unittest.TestCase):

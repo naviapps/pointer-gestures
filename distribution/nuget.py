@@ -22,6 +22,7 @@ from sdk_tooling.xcframework import xcframework
 from .package_layout import KINDS, PackageLayout
 
 MACOS_RIDS = ("osx-arm64", "osx-x64")
+LOCAL_VERSION = re.compile(r"\d+\.\d+\.\d+-[0-9A-Za-z][0-9A-Za-z.-]*")
 
 
 def digest(path):
@@ -39,6 +40,46 @@ def package_workspace(rid):
             yield Path(temporary)
 
 
+@contextmanager
+def candidate_feed(root, output, version, kinds):
+    """Build the complete selection before adding new packages to the feed."""
+    if not LOCAL_VERSION.fullmatch(version):
+        raise ValueError("Local candidates require an explicit prerelease version")
+    output = output.resolve()
+    output.mkdir(parents=True, exist_ok=True)
+    candidates = [
+        output / f"{PackageLayout(root, kind).managed_id}.{version}.nupkg" for kind in kinds
+    ]
+    if any(candidate.exists() or candidate.is_symlink() for candidate in candidates):
+        raise ValueError("Choose a new candidate version; existing packages are immutable")
+    with tempfile.TemporaryDirectory(dir=output, prefix="package-stage-") as temporary:
+        stage = Path(temporary)
+        yield stage
+        packages = [(stage / candidate.name, candidate) for candidate in candidates]
+        if any(not staged.is_file() or staged.is_symlink() for staged, _ in packages):
+            raise ValueError("Missing staged package in the selected candidate set")
+        linked = []
+        try:
+            for staged, candidate in packages:
+                # Record the attempt before linking so interruption can still undo it.
+                linked.append((staged, candidate))
+                candidate.hardlink_to(staged)
+        except BaseException as error:
+            for staged, candidate in reversed(linked):
+                try:
+                    if not candidate.is_symlink() and candidate.samefile(staged):
+                        candidate.unlink()
+                except FileNotFoundError:
+                    pass
+                except OSError as cleanup_error:
+                    error.add_note(
+                        f"Could not remove incomplete candidate {candidate}: {cleanup_error}"
+                    )
+            raise
+    for candidate in candidates:
+        print(f"Local candidate: {candidate}. Run the execution checks for each selected runtime.")
+
+
 class NuGetSDK:
     def __init__(self, root, kind, env, dotnet, report_dir):
         self.root = root
@@ -49,13 +90,7 @@ class NuGetSDK:
         self.report_dir = report_dir
 
     def pack(self, version, output, assets):
-        if not re.fullmatch(r"\d+\.\d+\.\d+-[0-9A-Za-z][0-9A-Za-z.-]*", version):
-            raise ValueError("Local candidates require an explicit prerelease version")
-        output = output.resolve()
-        output.mkdir(parents=True, exist_ok=True)
         candidate = output / (self.id + "." + version + ".nupkg")
-        if candidate.exists():
-            raise ValueError("Choose a new candidate version; existing packages are immutable")
         with tempfile.TemporaryDirectory(dir=output) as temporary:
             stage = Path(temporary)
             staged_candidate = stage / candidate.name
@@ -106,11 +141,6 @@ class NuGetSDK:
                 runtime_files=runtime_files,
             )
             candidate.hardlink_to(staged_candidate)
-        print(
-            "Local candidate: "
-            + str(candidate)
-            + ". Run the execution checks for each selected runtime."
-        )
 
     def package_consumer(self, rid, version, feed, *, execute, probe=None, evidence=None):
         # A fresh restore proves the package works without sibling projects, source builds or global caches.
@@ -319,7 +349,7 @@ def main():
             parser.error("Packing requires --output")
     elif len(rids) != 1 or not args.feed or args.output:
         parser.error("Checking a package requires one --rid and --feed")
-    if not re.fullmatch(r"\d+\.\d+\.\d+-[0-9A-Za-z][0-9A-Za-z.-]*", args.version):
+    if not LOCAL_VERSION.fullmatch(args.version):
         parser.error("Local candidates require an explicit prerelease version")
     root = Path(__file__).resolve().parents[1]
     env = dict(
@@ -334,18 +364,22 @@ def main():
     try:
         if args.command == "test-package" and rids[0] in MACOS_RIDS:
             require_macos_host(rids[0], dotnet, env)
-        for kind in (args.sdk,) if args.sdk else KINDS:
-            if args.command == "pack":
-                assets = {}
-                if any(rid in MACOS_RIDS for rid in rids):
-                    asset = macos_asset(root, kind)
-                    assets.update((rid, asset) for rid in rids if rid in MACOS_RIDS)
-                if RID in rids:
-                    sdk = WindowsSDK(root, kind)
-                    name = sdk.library + ".dll"
-                    assets[RID] = (sdk.verify() / name, name)
-                NuGetSDK(root, kind, env, dotnet, None).pack(args.version, args.output, assets)
-            elif rids[0] == RID:
+        selected = (args.sdk,) if args.sdk else KINDS
+        if args.command == "pack":
+            with candidate_feed(root, args.output, args.version, selected) as stage:
+                for kind in selected:
+                    assets = {}
+                    if any(rid in MACOS_RIDS for rid in rids):
+                        asset = macos_asset(root, kind)
+                        assets.update((rid, asset) for rid in rids if rid in MACOS_RIDS)
+                    if RID in rids:
+                        sdk = WindowsSDK(root, kind)
+                        name = sdk.library + ".dll"
+                        assets[RID] = (sdk.verify() / name, name)
+                    NuGetSDK(root, kind, env, dotnet, None).pack(args.version, stage, assets)
+            return
+        for kind in selected:
+            if rids[0] == RID:
                 sdk = WindowsSDK(root, kind)
                 if args.command == "test-package":
                     sdk.test_package(args.version, args.feed)

@@ -17,7 +17,7 @@ from sdk_tooling.dotnet import pinned_sdk_version
 from sdk_tooling.native_plan import ffi_product
 
 from .abi_layout import report_layout
-from .nuget import NuGetSDK
+from .nuget import NuGetSDK, candidate_feed
 from .package_layout import KINDS, PackageLayout
 
 RID = "win-x64"
@@ -501,6 +501,13 @@ def main():
     )
     root = Path(__file__).resolve().parents[1]
     try:
+        if args.command == "pack":
+            if not args.version or not args.output:
+                parser.error("--version and --output are required")
+            with candidate_feed(root, args.output, args.version, selected) as stage:
+                for kind in selected:
+                    WindowsSDK(root, kind).pack(args.version, stage)
+            return
         for index, kind in enumerate(selected):
             sdk = WindowsSDK(root, kind)
             if args.command == "check":
@@ -513,10 +520,6 @@ def main():
                     "test-native": sdk.test_native,
                     "test-input": sdk.test_input,
                 }[args.command]()
-            elif args.command == "pack":
-                if not args.version or not args.output:
-                    parser.error("--version and --output are required")
-                sdk.pack(args.version, args.output)
             else:
                 if not args.version or not args.feed:
                     parser.error("--version and --feed are required")

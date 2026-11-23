@@ -227,6 +227,19 @@ The desktop input and overlay types under the `Windows` namespaces require Windo
 See [the local package checks](#local-net-package-checks) to build and verify a
 candidate for selected runtimes.
 
+With both candidate packages in a local feed, install them in a .NET 10 project.
+Use the version printed by the pack command and a new package cache for the first
+restore from that feed:
+
+```sh
+dotnet package add NaviApps.PointerGestures.Rendering --version 0.1.0-local.1 --no-restore
+dotnet restore --source "/path/to/pointer-feed" --packages ./.pointer-packages
+```
+
+Rendering brings in the matching recognition version. For a recognition-only host,
+add `NaviApps.PointerGestures.Recognition` instead. Choose a different prerelease
+version each time the source or selected runtime assets change.
+
 Recognition values use `GestureRecognitionOutput`, `GestureRecognitionStatus`,
 `GestureTrace` and `GesturePoint`; rendering uses the same `GesturePoint` coordinates.
 These replace the former `Output`, `Status`, `Trace` and `Point` types without aliases.
@@ -515,6 +528,9 @@ Pack both libraries at the same local prerelease version. Include `--rid` once
 per target. macOS assets come from the verified universal frameworks. Windows
 packages use the verified `win-x64` native libraries. See
 [Windows development](docs/WINDOWS.md#pack-local-candidates) for the x64 preparation steps.
+The pack command stages both packages before adding them to the feed, so a build
+failure leaves the selected version available for a retry. Existing versions
+remain immutable. Pass `--sdk recognition` to build only recognition.
 
 ```sh
 mise run sdk-tooling -- python -m distribution.nuget pack --rid osx-arm64 --rid osx-x64 \
@@ -537,7 +553,8 @@ for test ownership. GitHub Actions runs the same strict Swift tests and standalo
 Swift consumers on macOS 26 and 27. The Windows x64 job runs Rust and .NET binding
 tests. These workflows run on pushes and pull requests targeting `main`.
 The maintainer distribution workflow also checks C, installed NuGet consumers and
-the Web package in Chromium. Run `make check` for Swift and shared code.
+the Web package in Chromium. Its macOS job packs both macOS runtime assets and
+executes the NuGet consumers on arm64. Run `make check` for Swift and shared code.
 Use the distribution setup for `make check-web`. Use an owned desktop for
 native input and rendering probes.
 
