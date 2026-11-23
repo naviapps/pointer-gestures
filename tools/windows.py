@@ -13,7 +13,7 @@ import tomllib
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from tools._tooling import add_candidate_arguments, candidate_arguments, candidate_selected, load
+from tools._tooling import add_candidate_options, candidate_selected, load, select_candidate
 from tools.native import builder
 from tools.nuget import NuGetSDK
 from tools.sdk import KINDS
@@ -512,7 +512,7 @@ def main():
     )
     parser.add_argument("--sdk", choices=KINDS)
     parser.add_argument("--rid", choices=(RID,), default=RID)
-    add_candidate_arguments(parser)
+    add_candidate_options(parser)
     parser.add_argument(
         "--cross", action="store_true", help="Build with preinstalled cargo-xwin/LLVM"
     )
@@ -529,7 +529,7 @@ def main():
     )
     root = Path(__file__).resolve().parents[1]
     try:
-        candidate_arguments(parser, args)
+        select_candidate(parser, args, absolute=True)
         for index, kind in enumerate(selected):
             sdk = WindowsSDK(root, kind)
             if args.command == "check":

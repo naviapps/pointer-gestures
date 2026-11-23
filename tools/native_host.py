@@ -14,7 +14,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from tools._tooling import add_candidate_arguments, candidate_arguments, load, verify
+from tools._tooling import add_candidate_options, load, select_candidate, verify
 from tools.sdk import KINDS, SDK
 from tools.source import source_identity
 from tools.windows import RID, TARGET, WindowsSDK
@@ -109,7 +109,7 @@ def main():
         action="store_true",
         help="Install global input hooks and inject into an owned isolated Windows fixture",
     )
-    add_candidate_arguments(parser)
+    add_candidate_options(parser)
     args = parser.parse_args()
     if sys.platform != "win32" and (
         args.tooling_source is not None or args.tooling_revision is not None
@@ -117,7 +117,7 @@ def main():
         parser.error("Approved tooling selection is for Windows x64 acceptance")
     if sys.platform == "win32" and args.tooling_source is None:
         parser.error("Windows acceptance requires the approved x64 tooling checkout and revision")
-    tooling_options = candidate_arguments(parser, args)
+    tooling_options = select_candidate(parser, args, absolute=True)
     if args.desktop_input and sys.platform != "win32":
         parser.error("--desktop-input requires Windows")
     root = Path(__file__).resolve().parent.parent

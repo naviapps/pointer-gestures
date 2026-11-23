@@ -16,7 +16,7 @@ import zipfile
 from contextlib import contextmanager
 from pathlib import Path
 
-from tools._tooling import add_candidate_arguments, candidate_arguments, candidate_selected, load
+from tools._tooling import add_candidate_options, candidate_selected, load, select_candidate
 from tools.native import builder
 from tools.sdk import KINDS, SDK
 
@@ -325,7 +325,7 @@ def main():
     parser.add_argument("command", choices=("pack", "check-package", "test-package"))
     parser.add_argument("--sdk", choices=KINDS)
     parser.add_argument("--rid", action="append", choices=(*MACOS_RIDS, RID), required=True)
-    add_candidate_arguments(parser)
+    add_candidate_options(parser)
     parser.add_argument("--version", required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--feed", type=Path)
@@ -353,7 +353,7 @@ def main():
             args.tooling_source is not None or args.tooling_revision is not None
         ) and RID not in rids:
             parser.error("Approved tooling selection is for Windows x64 operations")
-        candidate_arguments(parser, args)
+        select_candidate(parser, args, absolute=True)
         if args.command == "test-package" and rids[0] in MACOS_RIDS:
             require_macos_host(rids[0], dotnet, env)
         for kind in (args.sdk,) if args.sdk else KINDS:

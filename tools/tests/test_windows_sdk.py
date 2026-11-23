@@ -125,7 +125,7 @@ class WindowsTargetSelectionTests(unittest.TestCase):
     def test_cli_rejects_active_arm64_rid_without_selecting_tooling(self):
         with (
             patch.object(windows.sys, "argv", ["windows", "verify", "--rid", "win-arm64"]),
-            patch.object(windows, "candidate_arguments") as select,
+            patch.object(windows, "select_candidate") as select,
             patch("sys.stderr"),
         ):
             with self.assertRaises(SystemExit) as exit:
