@@ -517,9 +517,10 @@ fixtures require explicit opt-in.
 ### Test responsibilities
 
 See [AGENTS.md](https://github.com/naviapps/pointer-gestures/blob/main/AGENTS.md#test-ownership)
-for test ownership. GitHub Actions runs strict Swift tests on macOS 26 with Xcode
-26.6. The Xcode 27 job runs the full SDK checks and validates the Web package in
-Chromium. The Windows x64 job checks C, .NET and installed NuGet consumers. The workflows run on pushes and pull requests targeting
+for test ownership. GitHub Actions runs the same strict Swift tests and standalone
+Swift consumers on macOS 26 and 27. A separate Xcode 27 job checks SDK distribution,
+including the Web package in Chromium. The Windows x64 job checks C, .NET and
+installed NuGet consumers. The workflows run on pushes and pull requests targeting
 `main`, with manual runs available. Run `make check` for Swift/common changes and
 `make check-web` for Web changes. Use an owned desktop for native input and rendering
 probes.

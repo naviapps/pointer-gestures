@@ -2,9 +2,11 @@ SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-a
 ARTIFACTS := $(CURDIR)/Artifacts
 
 .DEFAULT_GOAL := check
-.PHONY: check check-tools check-docs check-native check-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-types check-web-reproducibility check-web-browser build build-release format lint test
+.PHONY: check check-distribution check-tools check-docs check-native check-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-types check-web-reproducibility check-web-browser build build-release format lint test
 
-check: lint check-tools check-native check-docs check-consumer test-ffi build-release test
+check: check-distribution test check-consumer
+
+check-distribution: lint check-tools check-native check-docs test-ffi build-release
 
 check-consumer:
 	python3 -m tools.consumer
