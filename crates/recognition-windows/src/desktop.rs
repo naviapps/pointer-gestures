@@ -1961,6 +1961,43 @@ mod tests {
     }
 
     #[test]
+    fn an_untracked_release_does_not_replace_the_owed_replay_release() {
+        for untracked_release in [false, true] {
+            let mut worker = worker();
+            let down = worker
+                .session
+                .pointer(MouseAction::Down, pointer(20., 1), 1);
+            let release = pointer(20., 2);
+            let up = worker.session.pointer(MouseAction::Up, release, 2);
+            assert!(down.consume && up.consume);
+            assert_eq!(up.injections.len(), 2);
+            worker.in_flight = Some(InFlight {
+                press_id: up.press_id,
+                release: up.release,
+                release_consumed: up.consume,
+                target: None,
+                epoch: up.epoch,
+                injections: up.injections,
+                logical_before: up.logical_before,
+                accepted: Arc::new(AtomicU32::new(1)),
+            });
+            if untracked_release {
+                // The second down passed without obtaining a tracked input target.
+                let other_up = worker.session.pointer(MouseAction::Up, pointer(40., 4), 4);
+                assert!(!worker.defer(other_up));
+            }
+            assert_eq!(
+                worker.reconcile_in_flight().map(|(event, _, _)| event),
+                Some(Injection::Mouse {
+                    action: MouseAction::Up,
+                    point: release.point,
+                    time: release.time,
+                })
+            );
+        }
+    }
+
+    #[test]
     fn failed_stop_recovery_restores_a_newer_held_press_once() {
         let mut worker = worker();
         worker.session.pointer(MouseAction::Down, pointer(0., 1), 1);

@@ -524,4 +524,53 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
     recognizer.stop()
   }
+
+  func testUpdatingRecordingModeOrTuningDoesNotDiscardACompletedMatch() throws {
+    let tuning = try GestureRecognizerTuning.validated(minimumGestureStartAxisDistance: 3)
+    for fromTrace in [false, true] {
+      for changesRecordingMode in [false, true] {
+        let scenario = "fromTrace=\(fromTrace), changesRecordingMode=\(changesRecordingMode)"
+        let source = GestureEventSourceDouble(startResult: true)
+        weak var current: GestureRecognizer<String>?
+        var matcher = GesturePatternMatcher<String>()
+        matcher.register(pattern: [.right], match: "right")
+        var effects: [String] = []
+        let update: @MainActor @Sendable () -> Void = {
+          guard let recognizer = current else { return }
+          if changesRecordingMode {
+            recognizer.isRecordingModeEnabled = true
+          } else {
+            XCTAssertTrue(recognizer.updateTuning(tuning), scenario)
+          }
+        }
+        let recognizer = GestureRecognizer<String>(
+          eventSource: source,
+          configuration: makeGestureRecognizerTestConfiguration(
+            makeMatcher: { [matcher] _ in matcher },
+            onReplayRequested: { request in
+              XCTAssertEqual(request, .release(button: .secondary, at: .init(x: 40, y: 0)))
+              effects.append("release")
+              if !fromTrace { update() }
+            }, onMatch: { effects.append($0) }))
+        current = recognizer
+        let observation = recognizer.observeTrace {
+          if fromTrace && $0.tailPoint?.x == 40 { update() }
+        }
+        recognizer.start()
+        _ = source.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero))
+        _ = source.send(
+          makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 30, y: 0)))
+        XCTAssertEqual(
+          source.send(
+            makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 40, y: 0))),
+          .consume, scenario)
+        XCTAssertEqual(effects, ["release", "right"], scenario)
+        XCTAssertEqual(recognizer.snapshot.lastSessionReport?.outcome, .matched, scenario)
+        XCTAssertEqual(recognizer.isRecordingModeEnabled, changesRecordingMode, scenario)
+        XCTAssertFalse(recognizer.snapshot.trace.isVisible, scenario)
+        observation.cancel()
+        recognizer.stop()
+      }
+    }
+  }
 }

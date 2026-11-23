@@ -111,6 +111,7 @@ impl Session {
 
     pub fn pointer(&mut self, action: MouseAction, pointer: Pointer, now: u64) -> Delivery {
         self.last = pointer;
+        let is_tracked_release = action == MouseAction::Up && self.physical_down;
         if action == MouseAction::Down && self.physical_down {
             // A repeated native down is still part of the original held press.
             // Cancel recognition without replacing its capture/replay lifetime;
@@ -134,7 +135,7 @@ impl Session {
                 },
                 now,
             );
-        } else if action == MouseAction::Up {
+        } else if is_tracked_release {
             self.physical_down = false;
         }
         let was_logical = self.logical_down;
@@ -190,7 +191,8 @@ impl Session {
             delivery.consume = true;
         }
         if action == MouseAction::Up {
-            delivery.release = Some(pointer);
+            // An up with no tracked down cannot close an earlier replay batch.
+            delivery.release = is_tracked_release.then_some(pointer);
             if !self.close_pending {
                 self.logical_down = false;
             }

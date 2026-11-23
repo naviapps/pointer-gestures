@@ -16,6 +16,7 @@ public final class GestureRecognizer<Match: Sendable> {
   private let observationCenter = GestureRecognizerObservationCenter()
   private var sourceFailure: GestureRecognizerFailure?
   private var epoch: UInt64 = 0
+  private var matchRevision: UInt64 = 0
   private var configuredPressRevision: UInt64 = 0
   private(set) var inputGeneration: UInt64 = 0
   private(set) var nextDeadline: UInt64?
@@ -42,7 +43,7 @@ public final class GestureRecognizer<Match: Sendable> {
     get { state.status.isRecordingModeEnabled }
     set {
       if newValue != state.status.isRecordingModeEnabled {
-        _ = deliver(kind: 7, value: newValue ? 1 : 0)
+        _ = deliver(kind: 7, value: newValue ? 1 : 0, preservingMatch: true)
       }
     }
   }
@@ -124,7 +125,7 @@ public final class GestureRecognizer<Match: Sendable> {
     inputExpirationTask?.cancel()
     inputExpirationTask = nil
     timerGeneration = 0
-    _ = deliver(kind: 9)
+    _ = deliver(kind: 9, preservingMatch: true)
     if startup.setDelays(tuning.eventSourceStartRetryDelays) == 2 {
       scheduleSnapshot()
       scheduleStartupRetry()
@@ -178,9 +179,15 @@ public final class GestureRecognizer<Match: Sendable> {
   }
 
   @discardableResult
-  func deliver(kind: UInt32, point: GesturePoint = .zero, value: UInt32 = 0) -> UInt32 {
+  func deliver(
+    kind: UInt32, point: GesturePoint = .zero, value: UInt32 = 0, preservingMatch: Bool = false
+  ) -> UInt32 {
     epoch &+= 1
     let operation = epoch
+    // Recording mode and tuning updates make state projections stale without cancelling a match
+    // already completed by Rust. Input and lifecycle operations still supersede queued callbacks.
+    if !preservingMatch { matchRevision = epoch }
+    let matchOperation = matchRevision
     let frame = core.step(
       .init(
         kind: kind, button: Self.buttonID(configuration.recognitionButton),
@@ -191,7 +198,7 @@ public final class GestureRecognizer<Match: Sendable> {
     for delivery in frame.deliveries {
       switch delivery {
       case .replay(let request): configuration.onReplayRequested(request)
-      case .match(let match): if epoch == operation { configuration.onMatch(match) }
+      case .match(let match): if matchRevision == matchOperation { configuration.onMatch(match) }
       case .trace(let publication):
         guard epoch == operation else { continue }
         publish(publication, immediate: true, operation: operation)
