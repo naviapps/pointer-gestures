@@ -4,15 +4,15 @@ SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-a
 ARTIFACTS := $(CURDIR)/Artifacts
 
 .DEFAULT_GOAL := check
-.PHONY: check check-source test-managed test-rust check-distribution check-fixtures check-docs check-native check-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release format lint test
+.PHONY: check check-source test-managed test-rust check-distribution check-fixtures check-docs check-native test-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release format lint test
 
-check: check-source test check-consumer
+check: check-source test test-consumer
 
 check-source: lint test-rust test-ffi test-managed
 
 check-distribution: check-fixtures check-native check-docs build-release
 
-check-consumer:
+test-consumer:
 	$(SDK_TOOLING) swift-consumer
 
 check-rust-consumer:

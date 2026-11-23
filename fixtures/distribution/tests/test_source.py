@@ -11,7 +11,7 @@ class SourceIdentityTests(unittest.TestCase):
         with (
             patch.dict(
                 os.environ,
-                {"NAVI_CI_SOURCE_COMMIT": "a" * 40, "NAVI_CI_SOURCE_FINGERPRINT": "b" * 64},
+                {"VM_RUNNER_SOURCE_COMMIT": "a" * 40, "VM_RUNNER_SOURCE_FINGERPRINT": "b" * 64},
                 clear=True,
             ),
             patch("subprocess.check_output", side_effect=AssertionError("Unexpected Git query")),
@@ -32,7 +32,7 @@ class SourceIdentityTests(unittest.TestCase):
         for commit, fingerprint in [("invalid", "b" * 64), ("a" * 40, "invalid")]:
             with patch.dict(
                 os.environ,
-                {"NAVI_CI_SOURCE_COMMIT": commit, "NAVI_CI_SOURCE_FINGERPRINT": fingerprint},
+                {"VM_RUNNER_SOURCE_COMMIT": commit, "VM_RUNNER_SOURCE_FINGERPRINT": fingerprint},
                 clear=True,
             ):
                 with self.assertRaises(ValueError):

@@ -421,6 +421,13 @@ if (OperatingSystem.IsWindows())
 if (args.Contains("--windows-input"))
 {
     if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Live input check requires isolated Windows.");
+    var artifacts = Environment.GetEnvironmentVariable("VM_RUNNER_ARTIFACTS_DIR");
+    var legacyArtifacts = Environment.GetEnvironmentVariable("NAVI_CI_ARTIFACTS");
+    if (artifacts is not null && legacyArtifacts is not null && artifacts != legacyArtifacts)
+        throw new InvalidOperationException("Conflicting VM Runner artifact directories.");
+    artifacts ??= legacyArtifacts;
+    if (!string.IsNullOrEmpty(artifacts) && !Path.IsPathFullyQualified(artifacts))
+        throw new InvalidOperationException("VM_RUNNER_ARTIFACTS_DIR must be an absolute path.");
     using var desktopMatcher = new GesturePatternMatcher(); desktopMatcher.Register([Direction.Right], 42);
     using var desktop = new NaviApps.PointerGestures.Recognition.Windows.WindowsRecognizer(
         new GestureRecognitionConfiguration(15, 5, Timing.DurationNanoseconds(5), Timing.DurationNanoseconds(2)), desktopMatcher);
@@ -523,7 +530,7 @@ if (args.Contains("--windows-input"))
         scope = "Native control publication delivery; includes managed scheduling. Not physical mouse or UI end-to-end latency."
     };
     Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(measurement));
-    if (Environment.GetEnvironmentVariable("NAVI_CI_ARTIFACTS") is { } artifacts)
+    if (!string.IsNullOrEmpty(artifacts))
         File.WriteAllText(Path.Combine(artifacts, "pointer-recognition-notification.json"), System.Text.Json.JsonSerializer.Serialize(measurement));
     Console.WriteLine("Managed Windows adapter passed native start, policy, matcher, recording, observation and idempotent stop checks.");
 }

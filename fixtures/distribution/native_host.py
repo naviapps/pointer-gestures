@@ -14,6 +14,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+from sdk_tooling import vm_environment as vm
 from sdk_tooling.adapters import load, python_command, support_inputs
 
 from .sdk import KINDS, SDK
@@ -116,9 +117,7 @@ def main():
     root = Path(__file__).resolve().parents[2]
     source_commit, fingerprint = source_identity(root)
     tooling = support_inputs(root)
-    artifacts = (
-        Path(os.environ["NAVI_CI_ARTIFACTS"]) if os.environ.get("NAVI_CI_ARTIFACTS") else None
-    )
+    artifacts = vm.artifacts_dir()
     if artifacts:
         artifacts.mkdir(parents=True, exist_ok=True)
     machine = platform.machine().lower()

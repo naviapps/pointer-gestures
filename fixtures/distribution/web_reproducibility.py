@@ -6,18 +6,16 @@ import tarfile
 import tempfile
 from pathlib import Path
 
+from sdk_tooling import vm_environment as vm
 from sdk_tooling.adapters import python_command
 
 from fixtures.distribution.web import digest
 
 
 def check(root, revision):
-    env = dict(
-        os.environ,
-        GIT_NO_LAZY_FETCH="1",
-        NAVI_CI_SOURCE_COMMIT=revision,
-    )
-    env.pop("NAVI_CI_SOURCE_FINGERPRINT", None)
+    env = dict(os.environ, GIT_NO_LAZY_FETCH="1")
+    vm.set_value(env, vm.Variable.SOURCE_COMMIT, revision)
+    vm.set_value(env, vm.Variable.SOURCE_FINGERPRINT, None)
     with tempfile.TemporaryDirectory(prefix="pointer-web-reproducibility-") as temporary:
         scratch = Path(temporary)
         archive = scratch / "source.tar"

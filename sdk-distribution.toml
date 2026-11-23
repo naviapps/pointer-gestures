@@ -7,7 +7,7 @@ commands = [
     "check-rust-consumer",
     "check-c-consumer",
     "check-dotnet",
-    "check-consumer",
+    "test-consumer",
   ],
   ["rustup", "target", "add", "wasm32-unknown-unknown"],
   ["cargo", "fetch", "--locked", "--manifest-path", "bindings/web/rust/Cargo.toml"],
