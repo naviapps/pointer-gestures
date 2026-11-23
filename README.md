@@ -218,27 +218,28 @@ remain host-owned. See [Browser binding](https://github.com/naviapps/pointer-ges
 
 ## .NET usage
 
-Use the separate recognition and rendering packages from a local NuGet feed. Match
-managed code and native assets from the same build. SDK source checks and local
-packing do not publish a package feed or release.
+Use the separate recognition and rendering packages from the same successful
+[SDK distribution run](https://github.com/naviapps/sdk-tooling/actions/workflows/check-sdk-distribution.yml).
+Keep both packages in one local NuGet feed. Their native assets support macOS
+ARM64 and x64 and Windows x64, including x64 .NET on Windows 11 ARM64.
 
 The portable recognition and rendering APIs run on macOS and Windows.
 The desktop input and overlay types under the `Windows` namespaces require Windows.
 See [the local package checks](#local-net-package-checks) to build and verify a
 candidate for selected runtimes.
 
-With both candidate packages in a local feed, install them in a .NET 10 project.
-Use the version printed by the pack command and a new package cache for the first
-restore from that feed:
+With both packages in a local feed, install them in a .NET 10 project.
+Use the downloaded package version and a fresh package cache for the restore:
 
 ```sh
-dotnet package add NaviApps.PointerGestures.Rendering --version 0.1.0-local.1 --no-restore
+dotnet package add NaviApps.PointerGestures.Rendering --version 0.1.0 --no-restore
 dotnet restore --source "/path/to/pointer-feed" --packages ./.pointer-packages
 ```
 
-Rendering brings in the matching recognition version. For a recognition-only host,
-add `NaviApps.PointerGestures.Recognition` instead. Choose a different prerelease
-version each time the source or selected runtime assets change.
+Rendering requires the exact matching recognition version. Its CI artifact keeps
+Rendering at the root and Recognition under `dependencies/`. Copy both archives
+into the feed directory. For a recognition-only host, add
+`NaviApps.PointerGestures.Recognition`.
 
 Recognition values use `GestureRecognitionOutput`, `GestureRecognitionStatus`,
 `GestureTrace` and `GesturePoint`; rendering uses the same `GesturePoint` coordinates.
@@ -553,8 +554,10 @@ for test ownership. GitHub Actions runs the same strict Swift tests and standalo
 Swift consumers on macOS 26 and 27. The Windows x64 job runs Rust and .NET binding
 tests. These workflows run on pushes and pull requests targeting `main`.
 The maintainer distribution workflow also checks C, installed NuGet consumers and
-the Web package in Chromium. Its macOS job packs both macOS runtime assets and
-executes the NuGet consumers on arm64. Run `make check` for Swift and shared code.
+the Web package in Chromium. It combines the accepted x64 Windows builds and
+the macOS libraries, then executes the same pair of packages on both macOS .NET
+architectures and on Windows x64. Dispatch with `windows-on-arm=true` to also
+verify x64 emulation on Windows 11 ARM64. Run `make check` for Swift and shared code.
 Use the distribution setup for `make check-web`. Use an owned desktop for
 native input and rendering probes.
 

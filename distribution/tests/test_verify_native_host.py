@@ -6,8 +6,10 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
-from distribution.verify_native_host import retain_verified_packages
+from distribution.verify_native_host import retain_verified_native, retain_verified_packages
 from distribution.windows_sdk import WindowsSDK
 
 
@@ -134,6 +136,66 @@ class NativePackageRetentionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "exactly the two validated packages"):
             self.retain()
         self.assertEqual(list(self.artifacts.iterdir()), [])
+
+    def test_export_keeps_both_tested_builds_and_rejects_a_changed_receipt(self):
+        if self.system != "windows":
+            return
+        self.retain()
+        native = self.root / ".native-build/windows"
+        destination = self.artifacts / "sdk-windows"
+        products = {}
+        for kind, package in self.packages.items():
+            output = native / kind / self.rid
+            output.mkdir()
+            sdk_id = package.name.removesuffix(f".{self.version}.nupkg")
+            library = f"pointer_gesture_{kind}_ffi"
+            dll = output / (library + ".dll")
+            dll.write_text(kind)
+            receipt = output / "native-build.json"
+            receipt.write_text(
+                json.dumps({"outputs": {dll.name: hashlib.sha256(dll.read_bytes()).hexdigest()}})
+            )
+            execution = native / kind / f"test-{self.rid}/result.json"
+            execution.parent.mkdir()
+            execution.write_text(
+                json.dumps(
+                    {
+                        "result": "passed",
+                        "rid": self.rid,
+                        "nativeReceipt": hashlib.sha256(receipt.read_bytes()).hexdigest(),
+                    }
+                )
+            )
+            products[kind] = SimpleNamespace(
+                native=native / kind,
+                verify=lambda directory=output: directory,
+                id=sdk_id,
+                library=library,
+            )
+        receipt = native / "rendering" / self.rid / "native-build.json"
+        original = receipt.read_bytes()
+        with patch(
+            "distribution.verify_native_host.WindowsSDK", side_effect=lambda _, kind: products[kind]
+        ):
+            receipt.write_bytes(original + b" ")
+            with self.assertRaisesRegex(
+                ValueError, "Native execution receipt changed for rendering"
+            ):
+                retain_verified_native(
+                    self.root, self.destination, self.artifacts, self.version, {}
+                )
+            self.assertFalse(destination.exists())
+
+            receipt.write_bytes(original)
+            retain_verified_native(self.root, self.destination, self.artifacts, self.version, {})
+        self.assertEqual(
+            (destination / "rendering" / self.rid / receipt.name).read_bytes(), original
+        )
+        self.assertTrue(
+            (
+                destination / "recognition" / self.rid / "pointer_gesture_recognition_ffi.dll"
+            ).is_file()
+        )
 
 
 class MacOSNativePackageRetentionTests(NativePackageRetentionTests):

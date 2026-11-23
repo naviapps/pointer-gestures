@@ -9,6 +9,11 @@ executables = [
 ]
 verify_dependencies = true
 
+[nuget]
+package_id = "NaviApps.PointerGestures.Rendering"
+fixtures = ["fixtures/consumers/dotnet/Recognition.cs", "fixtures/consumers/dotnet/Rendering.cs"]
+windows_x64 = true
+
 [windows_bindings]
 packages = ["pointer-gesture-recognition-ffi", "pointer-gesture-rendering-ffi"]
 projects = [

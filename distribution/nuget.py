@@ -113,9 +113,6 @@ class NuGetSDK:
                     "UseSharedCompilation": "false",
                     "Version": version,
                     "NativePackageRoot": str(stage / "package-inputs"),
-                    "PublishRepositoryUrl": "false",
-                    "EnableSourceControlManagerQueries": "false",
-                    "IncludeSourceRevisionInInformationalVersion": "false",
                 },
             )
             with zipfile.ZipFile(staged_candidate) as package:

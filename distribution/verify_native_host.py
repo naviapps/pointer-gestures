@@ -101,23 +101,74 @@ def retain_verified_packages(root, feed, artifacts, rid, version):
                 raise ValueError(f"Package does not contain exactly the {rid} asset: {source.name}")
         # The Rendering package is only usable alongside this exact Recognition package.
         staged.rename(destination)
+    return destination
+
+
+def retain_verified_native(root, feed, artifacts, version, env):
+    """Transfer both x64 SDK builds that passed the native and package consumers."""
+    tooling = load("artifacts")
+    destination = artifacts / "sdk-windows"
+    if destination.exists() or destination.is_symlink():
+        raise FileExistsError(f"Refusing to replace retained native builds: {destination}")
+    with (
+        tooling.build_lock(root / ".native-build"),
+        tempfile.TemporaryDirectory(prefix="verified-native-", dir=artifacts) as temporary,
+    ):
+        stage = Path(temporary) / destination.name
+        for kind in KINDS:
+            sdk = WindowsSDK(root, kind)
+            sdk.env = env
+            built = sdk.verify()
+            source_receipt = built / "native-build.json"
+            receipt = json.loads(source_receipt.read_bytes())
+            tested = json.loads((sdk.native / f"test-{RID}/result.json").read_bytes())
+            if (
+                tested.get("result") != "passed"
+                or tested.get("rid") != RID
+                or tested.get("nativeReceipt") != tooling.file_sha256(source_receipt)
+            ):
+                raise ValueError(f"Native execution receipt changed for {kind}")
+            library = sdk.library + ".dll"
+            member = f"runtimes/{RID}/native/{library}"
+            with zipfile.ZipFile(feed / f"{sdk.id}.{version}.nupkg") as package:
+                with package.open(member) as stream:
+                    if (
+                        hashlib.file_digest(stream, "sha256").hexdigest()
+                        != receipt["outputs"][library]
+                    ):
+                        raise ValueError(
+                            f"Packaged Windows DLL differs from native acceptance for {kind}"
+                        )
+            copy = stage / kind / RID
+            shutil.copytree(built, copy, symlinks=True)
+            copied = tooling.hashes(tooling.files(copy), copy)
+            if copied != receipt["outputs"] | {"native-build.json": tested["nativeReceipt"]}:
+                raise ValueError(f"Staged native build differs from Windows acceptance for {kind}")
+        stage.rename(destination)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--architecture", required=True, choices=("arm64", "x86_64"))
     parser.add_argument(
+        "--export-native", action="store_true", help="Retain both accepted x64 builds"
+    )
+    parser.add_argument(
         "--desktop-input",
         action="store_true",
         help="Install global input hooks and inject into an owned isolated Windows fixture",
     )
     args = parser.parse_args()
+    if args.export_native and sys.platform != "win32":
+        parser.error("--export-native requires Windows")
     if args.desktop_input and sys.platform != "win32":
         parser.error("--desktop-input requires Windows")
     root = Path(__file__).resolve().parents[1]
     source_commit, fingerprint = source_identity(root)
     tooling = support_inputs(root)
     artifacts = vm.artifacts_dir()
+    if args.export_native and artifacts is None:
+        parser.error("--export-native requires an acceptance artifact directory")
     if artifacts:
         artifacts.mkdir(parents=True, exist_ok=True)
     machine = platform.machine().lower()
@@ -342,7 +393,9 @@ def main():
         if support_inputs(root) != tooling:
             raise ValueError("The SDK's local build tools changed during native acceptance")
         if artifacts:
-            retain_verified_packages(root, Path(directory), artifacts, rid, version)
+            feed = retain_verified_packages(root, Path(directory), artifacts, rid, version)
+            if args.export_native:
+                retain_verified_native(root, feed, artifacts, version, env)
     result = {
         "result": "passed",
         "system": platform.platform(),

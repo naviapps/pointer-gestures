@@ -2,34 +2,6 @@
 commands = [
   ["cargo", "fetch", "--locked"],
   ["make", "check-distribution", "check-rust-consumer", "check-c-consumer", "check-dotnet"],
-  [
-    "sdk-tooling",
-    "python",
-    "-m",
-    "distribution.nuget",
-    "pack",
-    "--rid",
-    "osx-arm64",
-    "--rid",
-    "osx-x64",
-    "--version",
-    "0.1.0-local.ci",
-    "--output",
-    "{temp}/pointer-nuget-feed",
-  ],
-  [
-    "sdk-tooling",
-    "python",
-    "-m",
-    "distribution.nuget",
-    "test-package",
-    "--rid",
-    "osx-arm64",
-    "--version",
-    "0.1.0-local.ci",
-    "--feed",
-    "{temp}/pointer-nuget-feed",
-  ],
   ["rustup", "target", "add", "wasm32-unknown-unknown"],
   ["cargo", "fetch", "--locked", "--manifest-path", "bindings/web/rust/Cargo.toml"],
   [
@@ -53,5 +25,9 @@ commands = [
     "distribution.verify_native_host",
     "--architecture",
     "x86_64",
+    "--export-native",
   ],
 ]
+
+[nuget]
+pack = "distribution/pack_nuget.py"

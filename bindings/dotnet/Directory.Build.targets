@@ -1,15 +1,20 @@
 <Project>
   <PropertyGroup Condition="'$(NativeSDKKind)' != ''">
-    <IsPackable Condition="'$(NativePackageRoot)' != ''">true</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PublishRepositoryUrl>false</PublishRepositoryUrl>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <NativePackageRuntimePattern Condition="'$(NativePackageRoot)' != ''">$(NativePackageRoot)/$(NativeSDKKind)/**/*</NativePackageRuntimePattern>
+    <NativePackageRuntimePattern Condition="'$(SdkNativeRuntimeAssets)' != ''">$(SdkNativeRuntimeAssets)/**/*</NativePackageRuntimePattern>
+    <IsPackable Condition="'$(NativePackageRuntimePattern)' != ''">true</IsPackable>
   </PropertyGroup>
-  <ItemGroup Condition="'$(NativeSDKKind)' != '' And '$(NativePackageRoot)' != ''">
+  <ItemGroup Condition="'$(NativePackageRuntimePattern)' != ''">
     <NativePackageRuntime Include="$(NativePackageRuntimePattern)" />
     <None Include="@(NativePackageRuntime)" Pack="true" PackagePath="runtimes/" />
     <None Include="$(MSBuildThisFileDirectory)../../ThirdParty/**/*" Exclude="$(MSBuildThisFileDirectory)../../ThirdParty/**/.DS_Store;$(MSBuildThisFileDirectory)../../ThirdParty/**/registry-notices.json" Pack="true" PackagePath="licenses/" />
     <None Include="$(MSBuildThisFileDirectory)../../LICENSE" Pack="true" PackagePath="licenses/" />
+    <None Include="$(MSBuildThisFileDirectory)../../LICENSE" Condition="'$(SdkNativeRuntimeAssets)' != ''" Pack="true" PackagePath="/" />
     <None Include="$(MSBuildThisFileDirectory)../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
   <Target Name="RequireNativeCandidates" BeforeTargets="GenerateNuspec" Condition="'$(NativeSDKKind)' != '' And '$(IsPackable)' == 'true'">

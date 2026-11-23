@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="../Shared/SnapshotValues.cs" Link="SnapshotValues.cs" />
     <InternalsVisibleTo Include="NaviApps.PointerGestures.Rendering.Tests" />
-    <ProjectReference Include="../NaviApps.PointerGestures.Recognition/NaviApps.PointerGestures.Recognition.csproj" />
+    <ProjectReference Include="../NaviApps.PointerGestures.Recognition/NaviApps.PointerGestures.Recognition.csproj" Condition="'$(SdkNativeRuntimeAssets)' == ''" />
+    <PackageReference Include="NaviApps.PointerGestures.Recognition" Version="[$(Version)]" Condition="'$(SdkNativeRuntimeAssets)' != ''" />
   </ItemGroup>
 </Project>
