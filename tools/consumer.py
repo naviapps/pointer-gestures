@@ -126,7 +126,7 @@ def main():
                 + '", package: "pointer-gestures")])'
             )
         (consumer / "Package.swift").write_text(
-            "// swift-tools-version: 6.4\nimport PackageDescription\n"
+            "// swift-tools-version: 6.3\nimport PackageDescription\n"
             'let package = Package(name: "Consumers", platforms: [.macOS(.v26)], '
             'dependencies: [.package(path: "../pointer-gestures")], targets: ['
             + ",".join(targets)
