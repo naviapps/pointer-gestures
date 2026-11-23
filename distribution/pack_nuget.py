@@ -3,7 +3,7 @@
 import argparse
 from pathlib import Path
 
-from sdk_tooling.adapters import load
+from sdk_tooling import nuget
 from sdk_tooling.xcframework import xcframework
 
 from distribution.nuget import MACOS_RIDS
@@ -15,16 +15,9 @@ RUNTIMES = (*MACOS_RIDS, RID)
 
 
 def pack(root, runtimes):
-    notices = root / "ThirdParty"
     license_file = root / "LICENSE"
     package_files = {"README.md": root / "README.md", "LICENSE": license_file}
-    package_files.update(
-        {
-            "licenses/" + path.relative_to(notices).as_posix(): path
-            for path in load("artifacts").files(notices)
-            if path.name not in (".DS_Store", "registry-notices.json")
-        }
-    )
+    package_files.update(nuget.retained_notice_files(root / "ThirdParty", "licenses"))
     if "licenses/LICENSE" in package_files:
         raise ValueError("Third-party notice collides with the SDK license")
     package_files["licenses/LICENSE"] = license_file
@@ -33,7 +26,7 @@ def pack(root, runtimes):
     for kind in KINDS:
         sdk = WindowsSDK(root, kind)
         packages.append(
-            load("nuget").pack_native(
+            nuget.pack_native(
                 xcframework(root, kind),
                 project=sdk.csproj,
                 package_files=package_files,
