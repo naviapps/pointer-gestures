@@ -1,0 +1,15 @@
+{
+  "name": "pointer-gestures-browser-acceptance",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "playwright": "1.65.0"
+  },
+  "browserGate": {
+    "fallbackReason": "Browser plugin not available",
+    "chromiumRevision": "1254",
+    "chromiumVersion": "158.0.8127.18",
+    "release": "https://github.com/microsoft/playwright/releases/tag/v1.65.0",
+    "browserManifest": "https://raw.githubusercontent.com/microsoft/playwright/v1.65.0/packages/playwright-core/browsers.json"
+  }
+}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pointer Gestures standalone browser acceptance</title>
+    <link rel="icon" href="data:," />
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; color: #172033; background: #f4f7fb; font: 16px/1.5 system-ui, sans-serif; }
+      main { max-width: 760px; margin: 24px auto; padding: 20px; }
+      h1 { font-size: 24px; line-height: 1.2; }
+      canvas { display: block; width: 100%; aspect-ratio: 2; border: 2px solid #8092ab; background: white; touch-action: none; }
+      output { display: block; margin: 16px 0; font-weight: 600; }
+      button { padding: 10px 18px; font: inherit; }
+    </style>
+    <script type="importmap">
+      { "imports": { "@naviapps/pointer-gestures": "/sdk/index.js" } }
+    </script>
+    <script type="module" src="/consumer.mjs"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Pointer Gestures standalone consumer</h1>
+      <p>Drag down, then right beyond the canvas. Release outside to match command 42.</p>
+      <canvas id="gesture" width="600" height="300" aria-label="Gesture input and trace"></canvas>
+      <output id="status" aria-live="polite">Loading installed SDK…</output>
+      <button id="dispose" type="button" disabled>Dispose session</button>
+    </main>
+  </body>
+</html>

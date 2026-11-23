@@ -1,0 +1,17 @@
+[package]
+name = "pointer-gestures-consumer"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+resolver = "3"
+
+[dependencies]
+pointer-gesture-recognition = { git = "https://github.com/naviapps/pointer-gestures", rev = "@SDK_REVISION@" }
+pointer-gesture-rendering = { git = "https://github.com/naviapps/pointer-gestures", rev = "@SDK_REVISION@", optional = true }
+
+[features]
+default = []
+geometry = ["dep:pointer-gesture-rendering"]
+raster = ["geometry", "pointer-gesture-rendering/raster"]

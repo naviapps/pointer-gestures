@@ -1,0 +1,52 @@
+"""Shared layout for the two independently consumable gesture SDKs."""
+
+import re
+import tomllib
+from dataclasses import dataclass
+from pathlib import Path
+
+KINDS = ("recognition", "rendering")
+
+
+@dataclass(frozen=True)
+class SDK:
+    root: Path
+    kind: str
+
+    def __post_init__(self):
+        if self.kind not in KINDS:
+            raise ValueError("Unknown gesture SDK: " + self.kind)
+
+    @property
+    def ffi(self):
+        return self.root / "crates" / (self.kind + "-ffi")
+
+    @property
+    def crate_paths(self):
+        names = (
+            ("recognition", "recognition-ffi", "recognition-windows")
+            if self.kind == "recognition"
+            else ("recognition", "rendering", "rendering-ffi", "rendering-windows")
+        )
+        return tuple(self.root / "crates" / name for name in names)
+
+    @property
+    def package(self):
+        return tomllib.loads((self.ffi / "Cargo.toml").read_text())["package"]["name"]
+
+    @property
+    def module(self):
+        return re.search(r"module (\w+)", (self.ffi / "module.modulemap").read_text())[1]
+
+    @property
+    def managed_id(self):
+        return "NaviApps.PointerGestures." + self.kind.title()
+
+    @property
+    def project(self):
+        return self.root / "bindings/dotnet/src" / self.managed_id / (self.managed_id + ".csproj")
+
+    @property
+    def tests(self):
+        name = self.managed_id + ".Tests"
+        return self.root / "bindings/dotnet/tests" / name / (name + ".csproj")

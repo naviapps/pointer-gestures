@@ -1,0 +1,4 @@
+framework module CPointerGestureRendering {
+  umbrella header "pointer_gesture_rendering.h"
+  export *
+}

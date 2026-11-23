@@ -1,0 +1,22 @@
+[workspace]
+members = [
+  "crates/recognition",
+  "crates/recognition-ffi",
+  "crates/recognition-windows",
+  "crates/rendering",
+  "crates/rendering-ffi",
+  "crates/rendering-windows",
+]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/naviapps/pointer-gestures"
+rust-version = "1.99"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "none"

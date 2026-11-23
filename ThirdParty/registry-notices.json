@@ -1,0 +1,89 @@
+[
+  {
+    "checksum": "76a2e8124351fda1ef8aaaa3bbd7ebbcb486bbcd4225aca0aa0d84bb2db8fecb",
+    "directory": "arrayref-0.3.9",
+    "files": {
+      "LICENSE": "1bc7e6f475b3ec99b7e2643411950ae2368c250dd4c5c325f80f9811362a94a1"
+    },
+    "source": "registry+https://github.com/rust-lang/crates.io-index"
+  },
+  {
+    "checksum": "d3fb67a6e08acf24fdeccbac2cb6ac4305825bd1f117462e0e6f2f193345ad56",
+    "directory": "arrayvec-0.7.8",
+    "files": {
+      "LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "LICENSE-MIT": "4da95ec4ecb65b738d470b7d762894ad9c97da93e6cbfb18b570fc2c96f4b871"
+    },
+    "source": "registry+https://github.com/rust-lang/crates.io-index"
+  },
+  {
+    "checksum": "95832e849adfb21180ccb6826a99da14e5d266ae5c2e668e1602cf234f153797",
+    "directory": "bytemuck-1.25.2",
+    "files": {
+      "LICENSE-APACHE": "e3ba223bb1423f0aad8c3dfce0fe3148db48926d41e6fbc3afbbf5ff9e1c89cb",
+      "LICENSE-MIT": "9df9ba60a11af705f2e451b53762686e615d86f76b169cf075c3237730dbd7e2",
+      "LICENSE-ZLIB": "84b34dd7608f7fb9b17bd588a6bf392bf7de504e2716f024a77d89f1b145a151"
+    },
+    "source": "registry+https://github.com/rust-lang/crates.io-index"
+  },
+  {
+    "checksum": "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600",
+    "directory": "cfg-if-1.0.5",
+    "files": {
+      "LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "LICENSE-MIT": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397"
+    },
+    "source": "registry+https://github.com/rust-lang/crates.io-index"
+  },
+  {
+    "checksum": "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c",
+    "directory": "log-0.4.35",
+    "files": {
+      "LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "LICENSE-MIT": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb"
+    },
+    "source": "registry+https://github.com/rust-lang/crates.io-index"
+  },
+  {
+    "checksum": "6637bab7722d379c8b41ba849228d680cc12d0a45ba1fa2b48f2a30577a06731",
+    "directory": "strict-num-0.1.1",
+    "files": {
+      "LICENSE": "3085885678bb161f6c472bbd331f66a2550b555eb76128f7f8247779128199c0"
+    },
+    "source": "registry+https://github.com/rust-lang/crates.io-index"
+  },
+  {
+    "checksum": "47ffee5eaaf5527f630fb0e356b90ebdec84d5d18d937c5e440350f88c5a91ea",
+    "directory": "tiny-skia-0.12.0",
+    "files": {
+      "LICENSE": "6d41e05f1d54fe726997cb0334ec539f1dff50600b1d5d90462ec2b392770ced"
+    },
+    "source": "registry+https://github.com/rust-lang/crates.io-index"
+  },
+  {
+    "checksum": "edca365c3faccca67d06593c5980fa6c57687de727a03131735bb85f01fdeeb9",
+    "directory": "tiny-skia-path-0.12.0",
+    "files": {
+      "LICENSE": "6d41e05f1d54fe726997cb0334ec539f1dff50600b1d5d90462ec2b392770ced"
+    },
+    "source": "registry+https://github.com/rust-lang/crates.io-index"
+  },
+  {
+    "checksum": "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5",
+    "directory": "windows-link-0.2.1",
+    "files": {
+      "license-apache-2.0": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "license-mit": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+    },
+    "source": "registry+https://github.com/rust-lang/crates.io-index"
+  },
+  {
+    "checksum": "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc",
+    "directory": "windows-sys-0.61.2",
+    "files": {
+      "license-apache-2.0": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "license-mit": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+    },
+    "source": "registry+https://github.com/rust-lang/crates.io-index"
+  }
+]

@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup Condition="'$(NativeSDKKind)' != ''">
+    <IsPackable Condition="'$(NativePackageRoot)' != ''">true</IsPackable>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <NativePackageRuntimePattern Condition="'$(NativePackageRoot)' != ''">$(NativePackageRoot)/$(NativeSDKKind)/**/*</NativePackageRuntimePattern>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(NativeSDKKind)' != '' And '$(NativePackageRoot)' != ''">
+    <NativePackageRuntime Include="$(NativePackageRuntimePattern)" />
+    <None Include="@(NativePackageRuntime)" Pack="true" PackagePath="runtimes/" />
+    <None Include="$(MSBuildThisFileDirectory)../../ThirdParty/**/*" Exclude="$(MSBuildThisFileDirectory)../../ThirdParty/**/.DS_Store;$(MSBuildThisFileDirectory)../../ThirdParty/**/registry-notices.json" Pack="true" PackagePath="licenses/" />
+    <None Include="$(MSBuildThisFileDirectory)../../LICENSE" Pack="true" PackagePath="licenses/" />
+    <None Include="$(MSBuildThisFileDirectory)../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+  <Target Name="RequireNativeCandidates" BeforeTargets="GenerateNuspec" Condition="'$(NativeSDKKind)' != '' And '$(IsPackable)' == 'true'">
+    <Error Condition="'@(NativePackageRuntime)' == ''" Text="Use tools.nuget pack with selected verified native runtimes." />
+  </Target>
+</Project>

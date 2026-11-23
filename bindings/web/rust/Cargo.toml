@@ -1,0 +1,32 @@
+[package]
+name = "pointer-gestures-wasm"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+rust-version = "1.99"
+
+# Keep browser dependencies and their lockfile outside the native SDK workspace.
+[workspace]
+resolver = "3"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+web = ["dep:wasm-bindgen"]
+
+[dependencies]
+pointer-gesture-recognition = { path = "../../../crates/recognition" }
+pointer-gesture-rendering = { path = "../../../crates/rendering" }
+wasm-bindgen = { version = "=0.2.104", optional = true, default-features = false, features = [
+  "std",
+] }
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "s"
+panic = "abort"
+strip = "debuginfo"

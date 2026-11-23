@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <UseAppHost>false</UseAppHost>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <UseWindowsForms>true</UseWindowsForms>
+    <OutputPath>bin/$(NativeRid)/$(Configuration)/</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/NaviApps.PointerGestures.Rendering/NaviApps.PointerGestures.Rendering.csproj" />
+    <None Include="../../../../.native-build/windows/rendering/$(NativeRid)/pointer_gesture_rendering_ffi.dll" Link="pointer_gesture_rendering_ffi.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../../.native-build/windows/recognition/$(NativeRid)/pointer_gesture_recognition_ffi.dll" Link="pointer_gesture_recognition_ffi.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../../LICENSE" Link="licenses/LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../../../ThirdParty/Rust/**/*" Link="licenses/Rust/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <!-- IDE/analyzer loads inspect source; normal builds still require both native DLLs. -->
+  <Target Name="RequireNativeLibraries" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Error Condition="'$(NativeRid)' != 'win-x64' Or '$(RuntimeIdentifier)' != 'win-x64'" Text="Set NativeRid and RuntimeIdentifier to win-x64 and use the x64 .NET SDK." />
+    <Error Condition="!Exists('../../../../.native-build/windows/rendering/$(NativeRid)/pointer_gesture_rendering_ffi.dll') Or !Exists('../../../../.native-build/windows/recognition/$(NativeRid)/pointer_gesture_recognition_ffi.dll')" Text="Build both SDKs with -m tools.windows build --rid $(NativeRid) first." />
+  </Target>
+</Project>

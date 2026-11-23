@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <NativeSDKKind>rendering</NativeSDKKind>
+    <Description>Shared Rust pointer gesture rendering with a managed .NET adapter.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Shared/SnapshotValues.cs" Link="SnapshotValues.cs" />
+    <InternalsVisibleTo Include="NaviApps.PointerGestures.Rendering.Tests" />
+    <ProjectReference Include="../NaviApps.PointerGestures.Recognition/NaviApps.PointerGestures.Recognition.csproj" />
+  </ItemGroup>
+</Project>

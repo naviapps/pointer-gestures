@@ -1,0 +1,27 @@
+{
+  "name": "@naviapps/pointer-gestures",
+  "version": "0.1.0",
+  "license": "MIT",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    },
+    "./pointer_gestures_wasm_bg.wasm": "./pointer_gestures_wasm_bg.wasm",
+    "./provenance.json": "./provenance.json"
+  },
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "*.js",
+    "*.d.ts",
+    "*.wasm",
+    "LICENSE",
+    "README.md",
+    "provenance.json",
+    "SHA256SUMS",
+    "THIRD_PARTY_NOTICES"
+  ]
+}

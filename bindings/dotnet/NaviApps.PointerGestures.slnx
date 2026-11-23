@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/NaviApps.PointerGestures.Recognition/NaviApps.PointerGestures.Recognition.csproj" />
+  <Project Path="src/NaviApps.PointerGestures.Rendering/NaviApps.PointerGestures.Rendering.csproj" />
+  <Project Path="tests/NaviApps.PointerGestures.Recognition.Tests/NaviApps.PointerGestures.Recognition.Tests.csproj" />
+  <Project Path="tests/NaviApps.PointerGestures.Rendering.Tests/NaviApps.PointerGestures.Rendering.Tests.csproj" />
+</Solution>
