@@ -19,7 +19,7 @@ from pathlib import Path
 from sdk_tooling.adapters import load
 from sdk_tooling.native_plan import builder
 
-from .sdk import KINDS, SDK
+from .package_layout import KINDS, PackageLayout
 
 MACOS_RIDS = ("osx-arm64", "osx-x64")
 
@@ -42,7 +42,7 @@ def package_workspace(rid):
 class NuGetSDK:
     def __init__(self, root, kind, env, dotnet, report_dir):
         self.root = root
-        self.layout = SDK(root, kind)
+        self.layout = PackageLayout(root, kind)
         self.id = self.layout.managed_id
         self.env = env
         self.dotnet = dotnet
@@ -63,11 +63,11 @@ class NuGetSDK:
                 f"runtimes/{rid}/native/{name}": path for rid, (path, name) in assets.items()
             }
             for member, source in runtime_files.items():
-                load("bindings").stage_native(
+                load("artifacts").stage_native(
                     source,
                     stage / "package-inputs" / self.layout.kind / member.removeprefix("runtimes/"),
                 )
-            load("bindings").pack_project(
+            load("dotnet").pack_project(
                 self.dotnet,
                 self.layout.project,
                 output=stage,
@@ -96,7 +96,7 @@ class NuGetSDK:
                 for notice in (self.root / "ThirdParty").rglob("*")
                 if notice.is_file() and notice.name not in (".DS_Store", "registry-notices.json")
             }
-            load("bindings").audit_package(
+            load("nuget").audit_package(
                 staged_candidate,
                 expected_files={
                     "README.md": self.root / "README.md",
@@ -140,7 +140,7 @@ class NuGetSDK:
                 Version=version,
             )
             ET.ElementTree(project).write(work / "Consumer.csproj", encoding="utf-8")
-            shutil.copyfile(self.layout.tests.parent / "Program.cs", work / "Program.cs")
+            shutil.copyfile(self.layout.nuget_consumer, work / "Program.cs")
             config = ET.Element("configuration")
             feeds = ET.SubElement(config, "packageSources")
             ET.SubElement(feeds, "clear")
@@ -183,7 +183,7 @@ class NuGetSDK:
             output = work / "bin/Release/net10.0" / rid
             expected = {self.id: self.layout}
             if self.layout.kind == "rendering":
-                recognition = SDK(self.root, "recognition")
+                recognition = PackageLayout(self.root, "recognition")
                 expected[recognition.managed_id] = recognition
             for identity, library in assets["libraries"].items():
                 if library["type"] != "package":
@@ -216,7 +216,7 @@ class NuGetSDK:
                     if library.read_bytes() != archive.read(member):
                         raise ValueError("Selected native asset differs from the package")
                     if rid.startswith("win-"):
-                        from .windows import (
+                        from .windows_sdk import (
                             MACHINE,
                             inspect_pe,
                             public_exports,
@@ -253,7 +253,7 @@ class NuGetSDK:
                     "package": candidate.name,
                     "sha256": package_hash,
                     "restoredPackages": restored,
-                    "testSource": digest(self.layout.tests.parent / "Program.cs"),
+                    "testSource": digest(self.layout.nuget_consumer),
                     ("windowsExecuted" if rid.startswith("win-") else "macOSExecuted"): execute,
                     "nativeLoading": loading,
                     **(evidence or {}),
@@ -301,7 +301,7 @@ def require_macos_host(rid, dotnet, env):
 
 
 def main():
-    from .windows import RID, WindowsSDK
+    from .windows_sdk import RID, WindowsSDK
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("pack", "check-package", "test-package"))
@@ -319,7 +319,7 @@ def main():
         parser.error("Checking a package requires one --rid and --feed")
     if not re.fullmatch(r"\d+\.\d+\.\d+-[0-9A-Za-z][0-9A-Za-z.-]*", args.version):
         parser.error("Local candidates require an explicit prerelease version")
-    root = Path(__file__).resolve().parents[2]
+    root = Path(__file__).resolve().parents[1]
     env = dict(
         os.environ,
         DOTNET_CLI_TELEMETRY_OPTOUT="1",

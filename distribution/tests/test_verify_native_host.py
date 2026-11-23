@@ -7,8 +7,8 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from fixtures.distribution.native_host import retain_verified_packages
-from fixtures.distribution.windows import WindowsSDK
+from distribution.verify_native_host import retain_verified_packages
+from distribution.windows_sdk import WindowsSDK
 
 
 class NativePackageRetentionTests(unittest.TestCase):

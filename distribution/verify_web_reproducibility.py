@@ -9,7 +9,7 @@ from pathlib import Path
 from sdk_tooling import vm_environment as vm
 from sdk_tooling.adapters import python_command
 
-from fixtures.distribution.web import digest
+from distribution.npm_package import digest
 
 
 def check(root, revision):
@@ -32,7 +32,7 @@ def check(root, revision):
             with tarfile.open(archive) as snapshot:
                 snapshot.extractall(source, filter="data")
             subprocess.run(
-                python_command(source, "-m", "fixtures.distribution.web"),
+                python_command(source, "-m", "distribution.npm_package"),
                 cwd=source,
                 env=env,
                 check=True,
@@ -56,7 +56,7 @@ def check(root, revision):
 
 
 def main():
-    root = Path(__file__).resolve().parents[2]
+    root = Path(__file__).resolve().parents[1]
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     check(root, revision)
 

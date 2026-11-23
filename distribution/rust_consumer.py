@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 URL = "https://github.com/naviapps/pointer-gestures"
 RECOGNITION = "pointer-gesture-recognition"
 RENDERING = "pointer-gesture-rendering"

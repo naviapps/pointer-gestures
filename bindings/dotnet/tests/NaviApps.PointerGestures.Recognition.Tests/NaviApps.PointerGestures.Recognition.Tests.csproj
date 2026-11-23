@@ -4,6 +4,7 @@
     <DefineConstants>$(DefineConstants);SOURCE_CONSUMER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../../../fixtures/consumers/dotnet/Recognition.cs" Link="PackageConsumer/Recognition.cs" />
     <ProjectReference Include="../../src/NaviApps.PointerGestures.Recognition/NaviApps.PointerGestures.Recognition.csproj" />
   </ItemGroup>
 </Project>

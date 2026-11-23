@@ -50,7 +50,7 @@ def main():
     parser.add_argument("--source-revision", help="Commit of a previously verified SDK package")
     parser.add_argument("--provenance-sha256", help="Expected SHA-256 of the package provenance")
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[2]
+    root = Path(__file__).resolve().parents[1]
     fixture = root / "bindings/web/tests/browser"
     require(
         platform.system() == "Darwin" and platform.machine() == "arm64",

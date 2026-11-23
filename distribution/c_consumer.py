@@ -6,9 +6,9 @@ from pathlib import Path
 from sdk_tooling.adapters import load
 from sdk_tooling.native_plan import builder
 
-from fixtures.distribution.sdk import KINDS
+from distribution.package_layout import KINDS
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def main():
@@ -34,7 +34,7 @@ def main():
             rust_packages=(),
             framework=framework.relative_to(ROOT).as_posix(),
             header=f"pointer_gesture_{kind}.h",
-            c_fixture=f"fixtures/c-consumer/{kind}.c",
+            c_fixture=f"fixtures/consumers/c/{kind}.c",
             c_receipt=native.receipt.relative_to(ROOT).as_posix(),
             argv=argv,
         )

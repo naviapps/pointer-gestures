@@ -4,25 +4,25 @@ SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-a
 ARTIFACTS := $(CURDIR)/Artifacts
 
 .DEFAULT_GOAL := check
-.PHONY: check check-source test-managed test-rust check-distribution check-fixtures check-docs check-native test-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release format lint test
+.PHONY: check check-source test-managed test-rust check-distribution test-distribution-tools check-docs check-native test-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release format lint test
 
 check: check-source test test-consumer
 
 check-source: lint test-rust test-ffi test-managed
 
-check-distribution: check-fixtures check-native check-docs build-release
+check-distribution: test-distribution-tools check-native check-docs build-release
 
 test-consumer:
 	$(SDK_TOOLING) swift-consumer
 
 check-rust-consumer:
-	$(SDK_TOOLING) python -m fixtures.distribution.rust_consumer
+	$(SDK_TOOLING) python -m distribution.rust_consumer
 
 check-c-consumer:
-	$(SDK_TOOLING) python -m fixtures.distribution.c_consumer
+	$(SDK_TOOLING) python -m distribution.c_consumer
 
-check-fixtures:
-	$(SDK_TOOLING) python -m unittest discover -s fixtures/distribution/tests
+test-distribution-tools:
+	$(SDK_TOOLING) python -m unittest discover -s distribution/tests
 
 check-docs:
 	RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked --offline
@@ -50,14 +50,14 @@ test-ffi:
 	done
 
 check-dotnet:
-	$(SDK_TOOLING) python -m fixtures.distribution.dotnet
+	$(SDK_TOOLING) python -m distribution.verify_dotnet
 
 check-windows:
-	$(SDK_TOOLING) python -m fixtures.distribution.windows check
+	$(SDK_TOOLING) python -m distribution.windows_sdk check
 
 # Web tools and dependencies remain independent of native consumer validation.
 check-web: check-web-source
-	$(SDK_TOOLING) python -m fixtures.distribution.web
+	$(SDK_TOOLING) python -m distribution.npm_package
 	node --test bindings/web/tests/*.test.mjs
 	node bindings/web/tests/web-consumer.mjs
 
@@ -69,10 +69,10 @@ check-web-types:
 	node bindings/web/tests/web-consumer.mjs --types-only
 
 check-web-reproducibility:
-	$(SDK_TOOLING) python -m fixtures.distribution.web_reproducibility
+	$(SDK_TOOLING) python -m distribution.verify_web_reproducibility
 
 check-web-browser:
-	$(SDK_TOOLING) python -m fixtures.distribution.web_browser --artifacts "$(BROWSER_ARTIFACTS)"
+	$(SDK_TOOLING) python -m distribution.verify_web_browser --artifacts "$(BROWSER_ARTIFACTS)"
 
 build:
 	swift build $(SWIFT_STRICT_FLAGS)

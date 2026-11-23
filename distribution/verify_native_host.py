@@ -17,9 +17,9 @@ from pathlib import Path
 from sdk_tooling import vm_environment as vm
 from sdk_tooling.adapters import load, python_command, support_inputs
 
-from .sdk import KINDS, SDK
-from .source import source_identity
-from .windows import RID, TARGET, WindowsSDK
+from .package_layout import KINDS, PackageLayout
+from .source_identity import source_identity
+from .windows_sdk import RID, TARGET, WindowsSDK
 
 
 def retain_verified_packages(root, feed, artifacts, rid, version):
@@ -31,7 +31,7 @@ def retain_verified_packages(root, feed, artifacts, rid, version):
     if system == "windows" and rid != RID:
         raise ValueError("Windows package retention requires win-x64")
     for kind in KINDS:
-        sdk = SDK(root, kind)
+        sdk = PackageLayout(root, kind)
         package = feed / f"{sdk.managed_id}.{version}.nupkg"
         receipt = root / f".native-build/{system}/{kind}/package-check-{rid}.json"
         if receipt.is_symlink() or not receipt.is_file():
@@ -64,10 +64,10 @@ def retain_verified_packages(root, feed, artifacts, rid, version):
     ):
         raise ValueError("Windows package receipts disagree with the execution host")
     restored = {
-        f"{SDK(root, kind).managed_id}/{version}": report["sha256"]
+        f"{PackageLayout(root, kind).managed_id}/{version}": report["sha256"]
         for kind, report in receipts.items()
     }
-    recognition_id = f"{SDK(root, 'recognition').managed_id}/{version}"
+    recognition_id = f"{PackageLayout(root, 'recognition').managed_id}/{version}"
     if (
         receipts["recognition"].get("restoredPackages")
         != {recognition_id: restored[recognition_id]}
@@ -89,7 +89,7 @@ def retain_verified_packages(root, feed, artifacts, rid, version):
             with copy.open("rb") as package:
                 if hashlib.file_digest(package, "sha256").hexdigest() != receipts[kind]["sha256"]:
                     raise ValueError(f"Package changed since native validation: {source.name}")
-            library = SDK(root, kind).package.replace("-", "_")
+            library = PackageLayout(root, kind).package.replace("-", "_")
             filename = library + ".dll" if system == "windows" else f"lib{library}.dylib"
             with zipfile.ZipFile(copy) as package:
                 runtime_files = [
@@ -114,7 +114,7 @@ def main():
     args = parser.parse_args()
     if args.desktop_input and sys.platform != "win32":
         parser.error("--desktop-input requires Windows")
-    root = Path(__file__).resolve().parents[2]
+    root = Path(__file__).resolve().parents[1]
     source_commit, fingerprint = source_identity(root)
     tooling = support_inputs(root)
     artifacts = vm.artifacts_dir()
@@ -196,7 +196,7 @@ def main():
         notice_index = root / "ThirdParty/registry-notices.json"
         retained_index = notice_index.read_bytes()
         for operation in ("build", "test-native"):
-            run(python_command(root, "-m", "fixtures.distribution.windows", operation))
+            run(python_command(root, "-m", "distribution.windows_sdk", operation))
             if notice_index.read_bytes() != retained_index:
                 raise SystemExit(
                     "Native validation changed the retained notice index; update and verify its source first."
@@ -218,9 +218,9 @@ def main():
             cwd=root / "bindings/dotnet",
         )
         for kind in KINDS:
-            sdk = SDK(root, kind)
+            sdk = PackageLayout(root, kind)
             project = sdk.tests
-            load("bindings").verify_managed(
+            load("dotnet").verify_managed(
                 dotnet,
                 project,
                 cwd=root,
@@ -240,7 +240,7 @@ def main():
             )
             output = project.parent / "bin/Release/net10.0"
             for dependency in KINDS:
-                layout = SDK(root, dependency)
+                layout = PackageLayout(root, dependency)
                 name = layout.package.replace("-", "_")
                 source = root / f".native-build/windows/{dependency}/{rid}/{name}.dll"
                 destination = output / (name + ".dll")
@@ -248,7 +248,7 @@ def main():
             run([dotnet, output / (project.stem + ".dll")])
 
         if args.desktop_input:
-            run(python_command(root, "-m", "fixtures.distribution.windows", "test-input"))
+            run(python_command(root, "-m", "distribution.windows_sdk", "test-input"))
         project = root / "bindings/dotnet/examples/windows"
         run(
             [
@@ -262,7 +262,7 @@ def main():
                 "-p:UseSharedCompilation=false",
             ]
         )
-        load("bindings").verify_managed(
+        load("dotnet").verify_managed(
             dotnet,
             project,
             cwd=root,
@@ -314,7 +314,7 @@ def main():
             python_command(
                 root,
                 "-m",
-                "fixtures.distribution.nuget",
+                "distribution.nuget",
                 "pack",
                 "--rid",
                 rid,
@@ -328,7 +328,7 @@ def main():
             python_command(
                 root,
                 "-m",
-                "fixtures.distribution.nuget",
+                "distribution.nuget",
                 "test-package",
                 "--rid",
                 rid,

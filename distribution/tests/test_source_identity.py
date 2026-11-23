@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from fixtures.distribution.source import source_identity
+from distribution.source_identity import source_identity
 
 
 class SourceIdentityTests(unittest.TestCase):

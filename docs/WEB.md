@@ -172,8 +172,8 @@ Fetch the separate locked dependencies once when network access is intended:
 
 ```sh
 mise exec -- cargo fetch --manifest-path bindings/web/rust/Cargo.toml --locked
-mise run sdk-tooling -- python -m fixtures.distribution.web
-mise run sdk-tooling -- python -m fixtures.distribution.web --verify
+mise run sdk-tooling -- python -m distribution.npm_package
+mise run sdk-tooling -- python -m distribution.npm_package --verify
 mise exec -- cargo test --manifest-path bindings/web/rust/Cargo.toml --locked --offline
 mise exec -- cargo clippy --manifest-path bindings/web/rust/Cargo.toml --all-targets --features web --locked --offline -- -D warnings
 mise exec -- node --test bindings/web/tests/*.test.mjs
@@ -235,7 +235,7 @@ fresh path under `RUNNER_TEMP` for evidence. The browser runs headless.
 
 Without `BROWSER_ARTIFACTS`, Make creates a temporary evidence directory and prints
 its path in the command. A previously verified SDK package can be checked by
-running `mise run sdk-tooling -- python -m fixtures.distribution.web_browser`
+running `mise run sdk-tooling -- python -m distribution.verify_web_browser`
 with `--artifacts`, `--package`, `--source-revision` and `--provenance-sha256`.
 The receipt records the commits of the fixture and the SDK. The browser gate
 verifies the installed package against its provenance and checksums and serves its
@@ -281,8 +281,8 @@ checksums before vendoring it; renaming generated files does not migrate an arti
 If the default output still contains the previous package, use a fresh directory:
 
 ```sh
-mise run sdk-tooling -- python -m fixtures.distribution.web --output .web-build/pointer-gestures
-mise run sdk-tooling -- python -m fixtures.distribution.web --verify --output .web-build/pointer-gestures
+mise run sdk-tooling -- python -m distribution.npm_package --output .web-build/pointer-gestures
+mise run sdk-tooling -- python -m distribution.npm_package --verify --output .web-build/pointer-gestures
 POINTER_GESTURES_WEB_PACKAGE=.web-build/pointer-gestures node --test bindings/web/tests/*.test.mjs
 ```
 

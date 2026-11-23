@@ -10,7 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from fixtures.distribution.nuget import NuGetSDK
+from distribution.nuget import NuGetSDK
 
 
 class WindowsPackageWorkspaceTests(unittest.TestCase):
@@ -24,8 +24,8 @@ class WindowsPackageWorkspaceTests(unittest.TestCase):
         self.sdk = sdk
         self.feed = root / "feed"
         self.feed.mkdir()
-        sdk.layout.tests.parent.mkdir(parents=True)
-        (sdk.layout.tests.parent / "Program.cs").write_text("fixture")
+        sdk.layout.nuget_consumer.parent.mkdir(parents=True)
+        sdk.layout.nuget_consumer.write_text("fixture")
         sdk.layout.ffi.mkdir(parents=True)
         (sdk.layout.ffi / "Cargo.toml").write_text(
             '[package]\nname = "pointer-gesture-recognition-ffi"\n'
@@ -36,9 +36,9 @@ class WindowsPackageWorkspaceTests(unittest.TestCase):
             package.writestr(self.documentation, b"fixture docs")
             package.writestr(f"runtimes/{self.rid}/native/{self.library}", b"fixture DLL")
         self.receipt = sdk.report_dir / f"package-check-{self.rid}.json"
-        self.enterContext(patch("fixtures.distribution.windows.inspect_pe"))
+        self.enterContext(patch("distribution.windows_sdk.inspect_pe"))
         self.run_dotnet = self.enterContext(
-            patch("fixtures.distribution.nuget.subprocess.run", side_effect=self.dotnet_fixture)
+            patch("distribution.nuget.subprocess.run", side_effect=self.dotnet_fixture)
         )
 
     def dotnet_fixture(self, argv, *, cwd, env, check):
@@ -90,7 +90,7 @@ class WindowsPackageWorkspaceTests(unittest.TestCase):
             return {"host-resolver": {"state": "loaded"}}
 
         with patch(
-            "fixtures.distribution.nuget.load",
+            "distribution.nuget.load",
             return_value=SimpleNamespace(temporary_workspace=workspace),
         ):
             self.consume(probe=probe)
@@ -111,7 +111,7 @@ class WindowsPackageWorkspaceTests(unittest.TestCase):
 
         with (
             patch(
-                "fixtures.distribution.nuget.load",
+                "distribution.nuget.load",
                 return_value=SimpleNamespace(temporary_workspace=workspace),
             ),
             self.assertRaises(PermissionError) as ctx,

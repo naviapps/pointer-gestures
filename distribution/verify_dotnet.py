@@ -12,11 +12,11 @@ from pathlib import Path
 
 from sdk_tooling.adapters import load
 
-from fixtures.distribution.sdk import KINDS, SDK
+from distribution.package_layout import KINDS, PackageLayout
 
 
 def main(root=None):
-    ROOT = Path(root or Path(__file__).resolve().parents[2]).resolve()
+    ROOT = Path(root or Path(__file__).resolve().parents[1]).resolve()
     dotnet = os.environ.get("DOTNET_BIN") or shutil.which("dotnet")
     if not dotnet:
         raise SystemExit("Install a .NET 10 SDK or set DOTNET_BIN to its executable.")
@@ -42,7 +42,7 @@ def main(root=None):
         raise SystemExit(
             "Runtime interop checks require host-native artifacts, not a cross target."
         )
-    layouts = [SDK(ROOT, kind) for kind in KINDS]
+    layouts = [PackageLayout(ROOT, kind) for kind in KINDS]
     subprocess.run(
         [
             "cargo",
@@ -62,7 +62,7 @@ def main(root=None):
         env[search] = str(library_dir) + os.pathsep + env.get(search, "")
 
     def execute(project):
-        load("bindings").verify_managed(
+        load("dotnet").verify_managed(
             dotnet,
             project,
             cwd=project.parent,

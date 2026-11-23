@@ -29,12 +29,12 @@ bin = "wasm-bindgen-0.2.104-aarch64-apple-darwin"
 commands = [
   ["rustup", "install", "--no-self-update"],
   ["cargo", "fmt", "--all", "--", "--check"],
-  ["sdk-tooling", "python", "-m", "unittest", "discover", "-s", "fixtures/distribution/tests"],
+  ["sdk-tooling", "python", "-m", "unittest", "discover", "-s", "distribution/tests"],
   [
     "sdk-tooling",
     "windows",
     "-m",
-    "fixtures.distribution.native_host",
+    "distribution.verify_native_host",
     "--architecture",
     "x86_64",
   ],

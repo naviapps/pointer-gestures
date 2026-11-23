@@ -49,10 +49,11 @@ The recognition/rendering packages under `crates` separately own portable logic,
 C ABI callers in `tests/c`, and Windows resources. Named .NET projects and tests
 live under `bindings/dotnet`; its `examples` directory is a runnable consumer.
 `bindings/web` owns the independent browser adapter and nested Rust workspace.
-Cross-language guides live in `docs`, and acceptance drivers live in
-`fixtures/distribution`.
-`Artifacts` and `ThirdParty` are retained consumer
-inputs; `.native-build` and `.web-build` are ignored developer output.
+External package consumers live in `fixtures/consumers`. The .NET tests reuse the
+same public API fixtures when running against source projects. Distribution
+drivers and their tests live in `distribution`, and cross-language guides live
+in `docs`. `Artifacts` and `ThirdParty` are retained consumer inputs.
+`.native-build` and `.web-build` are ignored developer output.
 
 ## Swift installation
 
@@ -492,7 +493,7 @@ build and API documentation.
 `make check-dotnet` builds host-native Rust libraries and runs the managed
 fixtures and README examples.
 Run `mise run sdk-tooling -- native --product recognition` to select one framework.
-`mise run sdk-tooling -- python -m fixtures.distribution.windows --help`
+`mise run sdk-tooling -- python -m distribution.windows_sdk --help`
 lists the Windows build, inspection, C and package consumer checks.
 Windows input and drawing probes require explicit opt-in in an owned isolated desktop.
 Local builds, actual native fixtures and exact-source CI are distinct evidence.
@@ -516,9 +517,9 @@ packages use the verified `win-x64` native libraries. See
 [Windows development](docs/WINDOWS.md#pack-local-candidates) for the x64 preparation steps.
 
 ```sh
-mise run sdk-tooling -- python -m fixtures.distribution.nuget pack --rid osx-arm64 --rid osx-x64 \
+mise run sdk-tooling -- python -m distribution.nuget pack --rid osx-arm64 --rid osx-x64 \
   --version 0.1.0-local.1 --output /path/to/pointer-feed
-mise run sdk-tooling -- python -m fixtures.distribution.nuget test-package --rid osx-arm64 \
+mise run sdk-tooling -- python -m distribution.nuget test-package --rid osx-arm64 \
   --version 0.1.0-local.1 --feed /path/to/pointer-feed
 ```
 

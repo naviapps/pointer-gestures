@@ -8,7 +8,7 @@ KINDS = ("recognition", "rendering")
 
 
 @dataclass(frozen=True)
-class SDK:
+class PackageLayout:
     root: Path
     kind: str
 
@@ -36,3 +36,7 @@ class SDK:
     def tests(self):
         name = self.managed_id + ".Tests"
         return self.root / "bindings/dotnet/tests" / name / (name + ".csproj")
+
+    @property
+    def nuget_consumer(self):
+        return self.root / "fixtures/consumers/dotnet" / (self.kind.title() + ".cs")

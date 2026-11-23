@@ -17,8 +17,7 @@ from sdk_tooling.adapters import load, support_inputs
 from sdk_tooling.native_plan import builder
 
 from .nuget import NuGetSDK
-from .sdk import KINDS
-from .sdk import SDK as SDKLayout
+from .package_layout import KINDS, PackageLayout
 
 RID = "win-x64"
 TARGET = "x86_64-pc-windows-msvc"
@@ -68,7 +67,7 @@ def public_exports(layout):
 class WindowsSDK:
     def __init__(self, root, kind="recognition"):
         self.root = root.resolve()
-        self.layout = SDKLayout(self.root, kind)
+        self.layout = PackageLayout(self.root, kind)
         self.ffi = self.layout.ffi
         self.builder = builder(self.root, kind)
         self.package = self.builder.package
@@ -146,7 +145,7 @@ class WindowsSDK:
                 "-p:UseSharedCompilation=false",
             ]
         )
-        load("bindings").verify_managed(
+        load("dotnet").verify_managed(
             self.dotnet,
             self.csproj,
             cwd=self.root,
@@ -278,7 +277,7 @@ class WindowsSDK:
         )
         load("windows").require_pe_machine(program, "x64")
         library = directory / (self.library + ".dll")
-        staged = load("bindings").stage_native(library, work / library.name)
+        staged = load("artifacts").stage_native(library, work / library.name)
         load("windows").require_pe_machine(staged, "x64")
         subprocess.run([str(program)], cwd=work, env=self.env, check=True)
         if digest(staged) != digest(library):
@@ -339,7 +338,7 @@ class WindowsSDK:
         load("windows").require_pe_machine(program, "x64")
         self.run([program])
         project = self.layout.tests
-        load("bindings").build_managed(
+        load("dotnet").build_managed(
             self.dotnet,
             project,
             cwd=self.root,
@@ -521,7 +520,7 @@ def main():
     selected = (
         (args.sdk,) if args.sdk else (("recognition",) if args.command == "test-input" else KINDS)
     )
-    root = Path(__file__).resolve().parents[2]
+    root = Path(__file__).resolve().parents[1]
     try:
         for index, kind in enumerate(selected):
             sdk = WindowsSDK(root, kind)

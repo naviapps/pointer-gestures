@@ -1,6 +1,6 @@
 import unittest
 
-from fixtures.distribution.rust_consumer import RECOGNITION, RENDERING, verify_normal_graph
+from distribution.rust_consumer import RECOGNITION, RENDERING, verify_normal_graph
 
 
 def edge(name, kind=None):

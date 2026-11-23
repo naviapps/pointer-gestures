@@ -6,7 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from fixtures.distribution import windows
+from distribution import windows_sdk
 
 
 class PointerExportPolicyTests(unittest.TestCase):
@@ -23,9 +23,11 @@ class PointerExportPolicyTests(unittest.TestCase):
                 )
                 (platform / "native.h").write_text(f"uint32_t {prefix}windows_abi_version(void);\n")
                 with patch.object(
-                    windows, "builder", return_value=SimpleNamespace(package="ffi", library="ffi")
+                    windows_sdk,
+                    "builder",
+                    return_value=SimpleNamespace(package="ffi", library="ffi"),
                 ):
-                    sdk = windows.WindowsSDK(root, kind)
+                    sdk = windows_sdk.WindowsSDK(root, kind)
                 self.assertEqual(
                     sdk.symbols, {prefix + "abi_version", prefix + "windows_abi_version"}
                 )
@@ -38,9 +40,9 @@ class PointerDLLPolicyTests(unittest.TestCase):
                 raise ValueError("Unexpected runtime dependency: " + name)
             return {"imports": [name]}
 
-        with patch.object(windows, "load", return_value=SimpleNamespace(inspect_pe=inspector)):
-            return windows.inspect_pe(
-                Path("owned.dll"), windows.MACHINE, {"pointer_gesture_recognition_test"}
+        with patch.object(windows_sdk, "load", return_value=SimpleNamespace(inspect_pe=inspector)):
+            return windows_sdk.inspect_pe(
+                Path("owned.dll"), windows_sdk.MACHINE, {"pointer_gesture_recognition_test"}
             )
 
     def test_system_rng_and_windows_api_sets_remain_allowed(self):
@@ -69,15 +71,15 @@ class WindowsTargetSelectionTests(unittest.TestCase):
         (self.root / "mise.toml").write_text('[tools]\ndotnet = "10.0.403"\n')
         self.enterContext(
             patch.object(
-                windows, "builder", return_value=SimpleNamespace(package="ffi", library="ffi")
+                windows_sdk, "builder", return_value=SimpleNamespace(package="ffi", library="ffi")
             )
         )
-        self.sdk = windows.WindowsSDK(self.root)
+        self.sdk = windows_sdk.WindowsSDK(self.root)
 
     def test_native_checks_require_windows(self):
         with (
-            patch.object(windows.sys, "platform", "darwin"),
-            patch.object(windows, "load") as load,
+            patch.object(windows_sdk.sys, "platform", "darwin"),
+            patch.object(windows_sdk, "load") as load,
         ):
             with self.assertRaisesRegex(ValueError, "requires a Windows worker"):
                 self.sdk.prepare_windows()
@@ -93,9 +95,9 @@ class WindowsTargetSelectionTests(unittest.TestCase):
         shared.target_dotnet.return_value = dotnet
         check_output = Mock(return_value="10.0.403\n")
         with (
-            patch.object(windows.sys, "platform", "win32"),
-            patch.object(windows, "load", return_value=shared),
-            patch.object(windows.subprocess, "check_output", check_output),
+            patch.object(windows_sdk.sys, "platform", "win32"),
+            patch.object(windows_sdk, "load", return_value=shared),
+            patch.object(windows_sdk.subprocess, "check_output", check_output),
         ):
             self.sdk.build()
             call = shared.native_msvc_environment.call_args
@@ -122,12 +124,12 @@ class WindowsTargetSelectionTests(unittest.TestCase):
 
     def test_cli_rejects_an_arm64_runtime(self):
         with (
-            patch.object(windows.sys, "argv", ["windows", "verify", "--rid", "win-arm64"]),
-            patch.object(windows, "load") as load,
+            patch.object(windows_sdk.sys, "argv", ["windows_sdk", "verify", "--rid", "win-arm64"]),
+            patch.object(windows_sdk, "load") as load,
             patch("sys.stderr"),
         ):
             with self.assertRaises(SystemExit) as exit:
-                windows.main()
+                windows_sdk.main()
             self.assertEqual(exit.exception.code, 2)
             load.assert_not_called()
 
