@@ -7,8 +7,9 @@ import { createServer } from "node:http";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const fixture = join(root, "bindings/web/tests/browser");
+const fixtures = dirname(fileURLToPath(import.meta.url));
+const root = resolve(fixtures, "../../..");
+const fixture = join(fixtures, "browser");
 const packageDirectory = resolve(process.env.POINTER_GESTURES_WEB_PACKAGE);
 const work = resolve(process.env.POINTER_GESTURES_BROWSER_WORK);
 const output = resolve(process.env.POINTER_GESTURES_BROWSER_ARTIFACTS);

@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools._tooling import load
+from sdk_tooling.adapters import load
 
 documentation = load("sdk_checks")
 

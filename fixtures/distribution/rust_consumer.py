@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 URL = "https://github.com/naviapps/pointer-gestures"
 RECOGNITION = "pointer-gesture-recognition"
 RENDERING = "pointer-gesture-rendering"
@@ -48,7 +48,7 @@ def verify_normal_graph(metadata, mode):
 
 
 def main():
-    from ._tooling import load
+    from sdk_tooling.adapters import load
 
     load("installed_consumers").check_installed(
         root=ROOT,

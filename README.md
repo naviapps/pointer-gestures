@@ -467,12 +467,11 @@ for both the native and Web workspaces.
 ### Distribution verification
 
 The [distribution plan](sdk-distribution.toml) defines the hosted acceptance
-commands. For local native or Web distribution checks, prepare a clean checkout
-of [SDK Tooling](https://github.com/naviapps/sdk-tooling) at the revision pinned
-by `tasks.sdk-tooling` in [`mise.toml`](mise.toml) and set its absolute path:
+commands. For local native or Web distribution checks, run the relevant Make
+targets through mise. The targets use the pinned [SDK Tooling](https://github.com/naviapps/sdk-tooling)
+CLI and fixtures in this checkout.
 
 ```sh
-export NAVI_SDK_TOOLING_SOURCE=/path/to/sdk-tooling
 mise exec -- make check-distribution
 ```
 
@@ -485,14 +484,15 @@ gh workflow run check-sdk-distribution.yml -R naviapps/sdk-tooling \
 ```
 
 When native sources change, run `mise exec -- make native` to rebuild the
-independent macOS frameworks and record their sources, toolchain, dependency
-provenance and hashes. `make check-distribution` checks the existing native
-receipts, C ownership, a Swift release build and API documentation.
+two macOS frameworks declared in [`native.toml`](native.toml) and record their
+sources, toolchain, dependency provenance and hashes. `make check-distribution`
+checks the existing native receipts, the distribution fixtures, a Swift release
+build and API documentation.
 `make check-dotnet` builds host-native Rust libraries and runs the managed
 fixtures and README examples.
-Run Python modules from the repository root. `python3 -m tools.native --sdk recognition`
-selects one framework; omitting `--sdk` handles both. `python3 -m tools.windows --help`
-describes native Windows build, inspection, C ownership and clean package consumers.
+Run `mise run sdk-tooling -- native --product recognition` to select one framework.
+`mise run sdk-tooling -- python -m fixtures.distribution.windows --help`
+lists the Windows build, inspection, C and package consumer checks.
 Windows input and drawing probes require explicit opt-in in an owned isolated desktop.
 Local builds, actual native fixtures and exact-source CI are distinct evidence.
 For documentation-only edits, `mise exec -- make check-docs` checks Rust API
@@ -515,9 +515,9 @@ packages use the verified `win-x64` native libraries. See
 [Windows development](docs/WINDOWS.md#pack-local-candidates) for the x64 preparation steps.
 
 ```sh
-mise exec -- python3 -m tools.nuget pack --rid osx-arm64 --rid osx-x64 \
+mise run sdk-tooling -- python -m fixtures.distribution.nuget pack --rid osx-arm64 --rid osx-x64 \
   --version 0.1.0-local.1 --output /path/to/pointer-feed
-mise exec -- python3 -m tools.nuget test-package --rid osx-arm64 \
+mise run sdk-tooling -- python -m fixtures.distribution.nuget test-package --rid osx-arm64 \
   --version 0.1.0-local.1 --feed /path/to/pointer-feed
 ```
 

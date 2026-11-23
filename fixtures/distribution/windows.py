@@ -13,11 +13,12 @@ import tomllib
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from tools._tooling import load, support_inputs
-from tools.native import builder
-from tools.nuget import NuGetSDK
-from tools.sdk import KINDS
-from tools.sdk import SDK as SDKLayout
+from sdk_tooling.adapters import load, support_inputs
+from sdk_tooling.native_plan import builder
+
+from .nuget import NuGetSDK
+from .sdk import KINDS
+from .sdk import SDK as SDKLayout
 
 RID = "win-x64"
 TARGET = "x86_64-pc-windows-msvc"
@@ -92,10 +93,7 @@ class WindowsSDK:
         subprocess.run([str(a) for a in args], cwd=self.root, env=self.env, check=True, **kwargs)
 
     def sources(self):
-        policy = [self.root / "tools" / name for name in ("windows.py", "native.py", "sdk.py")]
-        return (
-            self.builder.build_sources() | self.builder.hashes(policy, self.root) | support_inputs()
-        )
+        return self.builder.build_sources() | support_inputs(self.root)
 
     def rust(self):
         compiler = subprocess.check_output(
@@ -523,7 +521,7 @@ def main():
     selected = (
         (args.sdk,) if args.sdk else (("recognition",) if args.command == "test-input" else KINDS)
     )
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     try:
         for index, kind in enumerate(selected):
             sdk = WindowsSDK(root, kind)

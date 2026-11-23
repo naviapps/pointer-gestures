@@ -18,6 +18,6 @@
   <!-- IDE/analyzer loads inspect source; normal builds still require both native DLLs. -->
   <Target Name="RequireNativeLibraries" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'">
     <Error Condition="'$(NativeRid)' != 'win-x64' Or '$(RuntimeIdentifier)' != 'win-x64'" Text="Set NativeRid and RuntimeIdentifier to win-x64 and use the x64 .NET SDK." />
-    <Error Condition="!Exists('../../../../.native-build/windows/rendering/$(NativeRid)/pointer_gesture_rendering_ffi.dll') Or !Exists('../../../../.native-build/windows/recognition/$(NativeRid)/pointer_gesture_recognition_ffi.dll')" Text="Build both SDKs with -m tools.windows build --rid $(NativeRid) first." />
+    <Error Condition="!Exists('../../../../.native-build/windows/rendering/$(NativeRid)/pointer_gesture_rendering_ffi.dll') Or !Exists('../../../../.native-build/windows/recognition/$(NativeRid)/pointer_gesture_recognition_ffi.dll')" Text="Build both SDKs for $(NativeRid) using the Windows SDK build command in the README." />
   </Target>
 </Project>

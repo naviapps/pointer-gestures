@@ -6,7 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from tools import windows
+from fixtures.distribution import windows
 
 
 class PointerExportPolicyTests(unittest.TestCase):

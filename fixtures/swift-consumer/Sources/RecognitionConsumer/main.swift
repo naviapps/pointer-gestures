@@ -1,0 +1,33 @@
+import PointerGestureRecognition
+
+func requireSendable<Value: Sendable>(_: Value.Type) {}
+requireSendable(GesturePoint.self)
+requireSendable(GestureDirection.self)
+requireSendable(PointerButton.self)
+requireSendable(GestureModifierFlags.self)
+requireSendable(GestureEventDisposition.self)
+requireSendable(GestureInputEvent.self)
+requireSendable(GestureInputEvent.Kind.self)
+requireSendable(GestureReplayRequest.self)
+requireSendable(GestureRecognitionContext.self)
+requireSendable(GestureRecognizerTuning.self)
+requireSendable(GestureRecognizerTuning.ValidationError.self)
+requireSendable(GestureRecognizerState.self)
+requireSendable(GestureRecognizerState.Status.self)
+requireSendable(GestureRecognizerState.Trace.self)
+requireSendable(GestureSessionReport.self)
+requireSendable(GestureRecognizerState.Status.Lifecycle.self)
+requireSendable(GestureRecognizerFailure.self)
+requireSendable(GesturePatternMatcher<Int>.self)
+requireSendable(GestureRecognizerConfiguration<Int>.self)
+requireSendable(GestureObservationToken.self)
+requireSendable(GestureRecognizer<Int>.self)
+func requireHashable<Value: Hashable>(_: Value.Type) {}
+requireHashable(GestureDirection.self)
+func requireEquatable<Value: Equatable>(_: Value.Type) {}
+requireEquatable(GestureEventDisposition.self)
+requireEquatable(GestureRecognizerTuning.self)
+requireEquatable(GestureRecognizerState.Status.self)
+requireEquatable(GestureRecognizerState.Trace.self)
+requireEquatable(GestureSessionReport.self)
+print("PointerGestureRecognition imported")

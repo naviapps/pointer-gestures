@@ -3,10 +3,11 @@
 import argparse
 from pathlib import Path
 
-from tools._tooling import load
-from tools.sdk import KINDS, SDK
+from sdk_tooling.adapters import load
 
-ROOT = Path(__file__).resolve().parents[1]
+from fixtures.distribution.sdk import KINDS, SDK
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def main():

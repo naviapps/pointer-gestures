@@ -161,8 +161,7 @@ These are SDK development commands. Clone the
 [source repository](https://github.com/naviapps/pointer-gestures) and run them from
 its root; the generated consumer package does not contain build tools or manifests.
 Prepare the pinned tools using the [development setup](../README.md#development-and-acceptance)
-and the [distribution tooling checkout](../README.md#distribution-verification).
-Prefix the commands below with `mise exec --`.
+and use the pinned SDK Tooling CLI from mise.
 
 Use the repository's pinned Rust compiler and preinstall `wasm32-unknown-unknown`,
 `wasm-bindgen-cli` 0.2.104 and the Node.js and TypeScript versions in `mise.toml`.
@@ -172,16 +171,16 @@ and checks its SHA-256.
 Fetch the separate locked dependencies once when network access is intended:
 
 ```sh
-cargo fetch --manifest-path bindings/web/rust/Cargo.toml --locked
-python3 -m tools.web
-python3 -m tools.web --verify
-cargo test --manifest-path bindings/web/rust/Cargo.toml --locked --offline
-cargo clippy --manifest-path bindings/web/rust/Cargo.toml --all-targets --features web --locked --offline -- -D warnings
-node --test bindings/web/tests/*.test.mjs
-node tools/web-consumer.mjs
+mise exec -- cargo fetch --manifest-path bindings/web/rust/Cargo.toml --locked
+mise run sdk-tooling -- python -m fixtures.distribution.web
+mise run sdk-tooling -- python -m fixtures.distribution.web --verify
+mise exec -- cargo test --manifest-path bindings/web/rust/Cargo.toml --locked --offline
+mise exec -- cargo clippy --manifest-path bindings/web/rust/Cargo.toml --all-targets --features web --locked --offline -- -D warnings
+mise exec -- node --test bindings/web/tests/*.test.mjs
+mise exec -- node bindings/web/tests/web-consumer.mjs
 ```
 
-`tools.web` builds offline with the exact lockfile and matching CLI. It stages the
+The package builder runs offline with the exact lockfile and matching CLI. It stages the
 portable Rust crates under the browser workspace so Cargo derives the same package
 identities in different checkout paths. It remaps build paths, copies runtime
 notices and emits `.web-build/package` with full source snapshot
@@ -215,7 +214,7 @@ seven `@ts-expect-error` cases require invalid inputs and unsafe result use to f
 type checking. The fixture never executes. `make check-web-types` runs only the
 pack/install and static declaration checks against an existing generated package.
 Supply a different generated directory as the last argument to
-`node tools/web-consumer.mjs [--types-only]` when needed, or set `TSC_BIN` to the
+`node bindings/web/tests/web-consumer.mjs [--types-only]` when needed, or set `TSC_BIN` to the
 pinned compiler executable. These acceptance tools are developer prerequisites;
 the generated package ships no TypeScript compiler, and ordinary consumers only
 need the generated package and their JS host.
@@ -283,8 +282,13 @@ dependencies and imports to `@naviapps/pointer-gestures`. The Rust adapter repla
 `pointer_gestures_wasm_bg.wasm.d.ts`. Replace direct asset imports as shown above.
 Rebuild and verify the complete package to regenerate matching provenance and
 checksums before vendoring it; renaming generated files does not migrate an artifact.
-If the default output still contains the previous package, select a fresh directory
-with `python3 -m tools.web --output .web-build/pointer-gestures`, verify it with
-`python3 -m tools.web --verify --output .web-build/pointer-gestures`, and run Node
-tests with `POINTER_GESTURES_WEB_PACKAGE=.web-build/pointer-gestures`. Source API
+If the default output still contains the previous package, use a fresh directory:
+
+```sh
+mise run sdk-tooling -- python -m fixtures.distribution.web --output .web-build/pointer-gestures
+mise run sdk-tooling -- python -m fixtures.distribution.web --verify --output .web-build/pointer-gestures
+POINTER_GESTURES_WEB_PACKAGE=.web-build/pointer-gestures node --test bindings/web/tests/*.test.mjs
+```
+
+Source API
 values and host-owned session data retain their existing representation.

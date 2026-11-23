@@ -10,12 +10,13 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from tools._tooling import load
-from tools.sdk import KINDS, SDK
+from sdk_tooling.adapters import load
+
+from fixtures.distribution.sdk import KINDS, SDK
 
 
 def main(root=None):
-    ROOT = Path(root or Path(__file__).resolve().parent.parent).resolve()
+    ROOT = Path(root or Path(__file__).resolve().parents[2]).resolve()
     dotnet = os.environ.get("DOTNET_BIN") or shutil.which("dotnet")
     if not dotnet:
         raise SystemExit("Install a .NET 10 SDK or set DOTNET_BIN to its executable.")

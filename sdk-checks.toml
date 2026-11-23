@@ -1,3 +1,14 @@
+[swift]
+inputs = ["Package.swift", "Sources", "Tests", "Artifacts"]
+executables = [
+  "RecognitionConsumer",
+  "RecognitionMacOSConsumer",
+  "RenderingConsumer",
+  "RenderingSwiftUIConsumer",
+  "RenderingMacOSConsumer",
+]
+verify_dependencies = true
+
 [docs]
 catalogs = ["Sources/*/*.docc"]
 output = ".native-build/docs"

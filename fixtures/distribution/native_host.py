@@ -14,10 +14,11 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from tools._tooling import load, support_inputs
-from tools.sdk import KINDS, SDK
-from tools.source import source_identity
-from tools.windows import RID, TARGET, WindowsSDK
+from sdk_tooling.adapters import load, python_command, support_inputs
+
+from .sdk import KINDS, SDK
+from .source import source_identity
+from .windows import RID, TARGET, WindowsSDK
 
 
 def retain_verified_packages(root, feed, artifacts, rid, version):
@@ -112,9 +113,9 @@ def main():
     args = parser.parse_args()
     if args.desktop_input and sys.platform != "win32":
         parser.error("--desktop-input requires Windows")
-    root = Path(__file__).resolve().parent.parent
+    root = Path(__file__).resolve().parents[2]
     source_commit, fingerprint = source_identity(root)
-    tooling = support_inputs()
+    tooling = support_inputs(root)
     artifacts = (
         Path(os.environ["NAVI_CI_ARTIFACTS"]) if os.environ.get("NAVI_CI_ARTIFACTS") else None
     )
@@ -196,7 +197,7 @@ def main():
         notice_index = root / "ThirdParty/registry-notices.json"
         retained_index = notice_index.read_bytes()
         for operation in ("build", "test-native"):
-            run([sys.executable, "-m", "tools.windows", operation])
+            run(python_command(root, "-m", "fixtures.distribution.windows", operation))
             if notice_index.read_bytes() != retained_index:
                 raise SystemExit(
                     "Native validation changed the retained notice index; update and verify its source first."
@@ -248,7 +249,7 @@ def main():
             run([dotnet, output / (project.stem + ".dll")])
 
         if args.desktop_input:
-            run([sys.executable, "-m", "tools.windows", "test-input"])
+            run(python_command(root, "-m", "fixtures.distribution.windows", "test-input"))
         project = root / "bindings/dotnet/examples/windows"
         run(
             [
@@ -311,10 +312,10 @@ def main():
     version = "0.1.0-native." + (fingerprint or source_commit)[:12]
     with tempfile.TemporaryDirectory(prefix="pointer-native-feed-") as directory:
         run(
-            [
-                sys.executable,
+            python_command(
+                root,
                 "-m",
-                "tools.nuget",
+                "fixtures.distribution.nuget",
                 "pack",
                 "--rid",
                 rid,
@@ -322,13 +323,13 @@ def main():
                 version,
                 "--output",
                 directory,
-            ]
+            )
         )
         run(
-            [
-                sys.executable,
+            python_command(
+                root,
                 "-m",
-                "tools.nuget",
+                "fixtures.distribution.nuget",
                 "test-package",
                 "--rid",
                 rid,
@@ -336,9 +337,9 @@ def main():
                 version,
                 "--feed",
                 directory,
-            ]
+            )
         )
-        if support_inputs() != tooling:
+        if support_inputs(root) != tooling:
             raise ValueError("The SDK's local build tools changed during native acceptance")
         if artifacts:
             retain_verified_packages(root, Path(directory), artifacts, rid, version)

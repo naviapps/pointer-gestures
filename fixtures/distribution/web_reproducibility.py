@@ -2,12 +2,13 @@
 
 import os
 import subprocess
-import sys
 import tarfile
 import tempfile
 from pathlib import Path
 
-from tools.web import digest
+from sdk_tooling.adapters import python_command
+
+from fixtures.distribution.web import digest
 
 
 def check(root, revision):
@@ -33,7 +34,7 @@ def check(root, revision):
             with tarfile.open(archive) as snapshot:
                 snapshot.extractall(source, filter="data")
             subprocess.run(
-                [sys.executable, "-E", "-S", "-B", "-m", "tools.web"],
+                python_command(source, "-m", "fixtures.distribution.web"),
                 cwd=source,
                 env=env,
                 check=True,
@@ -57,7 +58,7 @@ def check(root, revision):
 
 
 def main():
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     check(root, revision)
 

@@ -208,7 +208,7 @@ def main():
             )
             summary["browserRun"] = True
             run(
-                [node, root / "tools/web-browser-consumer.mjs"],
+                [node, root / "bindings/web/tests/web-browser-consumer.mjs"],
                 root,
                 env,
                 output / "browser.log",

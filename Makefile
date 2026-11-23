@@ -1,40 +1,41 @@
+SDK_TOOLING ?= mise run sdk-tooling --
 SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
 ARTIFACTS := $(CURDIR)/Artifacts
 
 .DEFAULT_GOAL := check
-.PHONY: check check-source test-managed test-rust check-distribution check-tools check-docs check-native check-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release format lint test
+.PHONY: check check-source test-managed test-rust check-distribution check-fixtures check-docs check-native check-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release format lint test
 
 check: check-source test check-consumer
 
 check-source: lint test-rust test-ffi test-managed
 
-check-distribution: check-tools check-native check-docs build-release
+check-distribution: check-fixtures check-native check-docs build-release
 
 check-consumer:
-	python3 -m tools.consumer
+	$(SDK_TOOLING) swift-consumer
 
 check-rust-consumer:
-	python3 -B -m tools.rust_consumer
+	$(SDK_TOOLING) python -m fixtures.distribution.rust_consumer
 
 check-c-consumer:
-	python3 -B -m tools.c_consumer
+	$(SDK_TOOLING) python -m fixtures.distribution.c_consumer
 
-check-tools:
-	python3 -m unittest discover -s tools/tests
+check-fixtures:
+	$(SDK_TOOLING) python -m unittest discover -s fixtures/distribution/tests
 
 check-docs:
 	RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked --offline
-	mise run sdk-tooling -- docs
+	$(SDK_TOOLING) docs
 
 check-native:
-	python3 -m tools.native --verify
+	$(SDK_TOOLING) native --verify
 
 test-rust:
 	cargo test --workspace --locked --offline
 	cargo clippy --workspace --all-targets --locked --offline -- -D warnings
 
 native:
-	python3 -m tools.native
+	$(SDK_TOOLING) native
 
 # The maintained C callers use ASan; the prebuilt Rust frameworks do not.
 test-ffi:
@@ -48,26 +49,26 @@ test-ffi:
 	done
 
 check-dotnet:
-	python3 -m tools.dotnet
+	$(SDK_TOOLING) python -m fixtures.distribution.dotnet
 
 check-windows:
-	python3 -m tools.windows check
+	$(SDK_TOOLING) python -m fixtures.distribution.windows check
 
 # Web tools and dependencies remain independent of native consumer validation.
 check-web: check-web-source
-	python3 -m tools.web
+	$(SDK_TOOLING) python -m fixtures.distribution.web
 	node --test bindings/web/tests/*.test.mjs
-	node tools/web-consumer.mjs
+	node bindings/web/tests/web-consumer.mjs
 
 check-web-source:
 	cargo test --manifest-path bindings/web/rust/Cargo.toml --locked --offline
 	cargo clippy --manifest-path bindings/web/rust/Cargo.toml --all-targets --features web --locked --offline -- -D warnings
 
 check-web-types:
-	node tools/web-consumer.mjs --types-only
+	node bindings/web/tests/web-consumer.mjs --types-only
 
 check-web-reproducibility:
-	python3 -E -S -B -m tools.web_reproducibility
+	$(SDK_TOOLING) python -m fixtures.distribution.web_reproducibility
 
 # Uses the package staged by CI under NAVI_CI_ARTIFACTS/web/package.
 # Set POINTER_GESTURES_WEB_PACKAGE to select a verified package in the owned guest.
@@ -81,10 +82,10 @@ build-release:
 	swift build -c release $(SWIFT_STRICT_FLAGS)
 
 format:
-	mise run format
+	$(SDK_TOOLING) quality format --dotnet
 
 lint:
-	mise run lint
+	$(SDK_TOOLING) quality check --dotnet
 
 test:
 	swift test $(SWIFT_STRICT_FLAGS)

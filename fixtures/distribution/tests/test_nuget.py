@@ -10,7 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from tools.nuget import NuGetSDK
+from fixtures.distribution.nuget import NuGetSDK
 
 
 class WindowsPackageWorkspaceTests(unittest.TestCase):
@@ -36,9 +36,9 @@ class WindowsPackageWorkspaceTests(unittest.TestCase):
             package.writestr(self.documentation, b"fixture docs")
             package.writestr(f"runtimes/{self.rid}/native/{self.library}", b"fixture DLL")
         self.receipt = sdk.report_dir / f"package-check-{self.rid}.json"
-        self.enterContext(patch("tools.windows.inspect_pe"))
+        self.enterContext(patch("fixtures.distribution.windows.inspect_pe"))
         self.run_dotnet = self.enterContext(
-            patch("tools.nuget.subprocess.run", side_effect=self.dotnet_fixture)
+            patch("fixtures.distribution.nuget.subprocess.run", side_effect=self.dotnet_fixture)
         )
 
     def dotnet_fixture(self, argv, *, cwd, env, check):
@@ -89,7 +89,10 @@ class WindowsPackageWorkspaceTests(unittest.TestCase):
             shutil.copyfile(output / self.library, native / self.library)
             return {"host-resolver": {"state": "loaded"}}
 
-        with patch("tools.nuget.load", return_value=SimpleNamespace(temporary_workspace=workspace)):
+        with patch(
+            "fixtures.distribution.nuget.load",
+            return_value=SimpleNamespace(temporary_workspace=workspace),
+        ):
             self.consume(probe=probe)
         self.assertEqual(len(calls), 1)
         self.assertFalse(calls[0].exists())
@@ -107,7 +110,10 @@ class WindowsPackageWorkspaceTests(unittest.TestCase):
                 raise failure
 
         with (
-            patch("tools.nuget.load", return_value=SimpleNamespace(temporary_workspace=workspace)),
+            patch(
+                "fixtures.distribution.nuget.load",
+                return_value=SimpleNamespace(temporary_workspace=workspace),
+            ),
             self.assertRaises(PermissionError) as ctx,
         ):
             self.consume()

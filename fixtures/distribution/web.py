@@ -10,8 +10,9 @@ import tempfile
 import tomllib
 from pathlib import Path
 
-from tools._tooling import load
-from tools.source import source_identity
+from sdk_tooling.adapters import load
+
+from fixtures.distribution.source import source_identity
 
 VERSION = "0.2.104"
 PORTABLE_CRATES = ("recognition", "rendering")
@@ -26,8 +27,8 @@ def inputs(root):
         root / "Cargo.toml",
         root / "rust-toolchain.toml",
         root / "LICENSE",
-        root / "tools/web.py",
-        root / "tools/source.py",
+        root / "fixtures/distribution/web.py",
+        root / "fixtures/distribution/source.py",
         root / "bindings/web/package.json",
         root / "docs/WEB.md",
     ]
@@ -258,7 +259,7 @@ def build(root, directory):
 
 
 def main():
-    root = Path(__file__).resolve().parent.parent
+    root = Path(__file__).resolve().parents[2]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=root / ".web-build/package")
     parser.add_argument("--verify", action="store_true")

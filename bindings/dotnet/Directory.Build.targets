@@ -13,6 +13,6 @@
     <None Include="$(MSBuildThisFileDirectory)../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
   <Target Name="RequireNativeCandidates" BeforeTargets="GenerateNuspec" Condition="'$(NativeSDKKind)' != '' And '$(IsPackable)' == 'true'">
-    <Error Condition="'@(NativePackageRuntime)' == ''" Text="Use tools.nuget pack with selected verified native runtimes." />
+    <Error Condition="'@(NativePackageRuntime)' == ''" Text="Run the NuGet pack command from the README with verified native runtimes." />
   </Target>
 </Project>

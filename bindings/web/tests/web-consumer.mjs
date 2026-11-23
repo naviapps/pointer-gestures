@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = dirname(dirname(fileURLToPath(import.meta.url)));
+const fixtures = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const typesOnly = args[0] === "--types-only";
 if (typesOnly) args.shift();
@@ -64,10 +64,10 @@ try {
     ["install", "--ignore-scripts", "--offline", "--no-audit", "--no-fund", "--package-lock=false", tarball],
     consumer,
   );
-  const typeFixture = join(root, "bindings/web/tests/typescript");
+  const typeFixture = join(fixtures, "typescript");
   await cp(join(typeFixture, "consumer.mts"), join(consumer, "consumer.mts"));
   await cp(join(typeFixture, "tsconfig.json"), join(consumer, "tsconfig.json"));
-  const typePin = JSON.parse(await readFile(join(root, "tools/typescript-dist.json"), "utf8"));
+  const typePin = JSON.parse(await readFile(join(fixtures, "typescript-dist.json"), "utf8"));
   const compiler = process.env.TSC_BIN ?? "tsc";
   const compilerVersion = run(compiler, ["--version"], consumer).trim();
   assert.equal(compilerVersion, `Version ${typePin.version}`);
@@ -102,7 +102,7 @@ try {
   // The installed client has no source checkout, compiler path or native-library override.
   const runtime = { ...userEnvironment, PATH: emptyPath, TMPDIR: work };
   if (!typesOnly) {
-    await cp(join(root, "bindings/web/tests/package-consumer.mjs"), join(consumer, "consumer.mjs"));
+    await cp(join(fixtures, "package-consumer.mjs"), join(consumer, "consumer.mjs"));
     result = JSON.parse(run(process.execPath, ["consumer.mjs"], consumer, runtime));
   }
   const declaration = run(

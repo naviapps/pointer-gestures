@@ -4,6 +4,8 @@ import base64
 import hashlib
 import json
 import os
+import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -164,11 +166,11 @@ def main():
         "typeScriptCompilerRun": False,
         "browserRun": False,
     }
-    type_pin = json.loads((root / "tools/typescript-dist.json").read_text())
+    mise = tomllib.loads((root / "mise.toml").read_text())
+    type_pin = json.loads((root / "bindings/web/tests/typescript-dist.json").read_text())
     require(
         type_pin["package"] == "typescript"
-        and type_pin["version"]
-        == tomllib.loads((root / "mise.toml").read_text())["tools"]["npm:typescript"]
+        and type_pin["version"] == mise["tools"]["npm:typescript"]
         and type_pin["url"]
         == "https://registry.npmjs.org/typescript/-/typescript-" + type_pin["version"] + ".tgz",
         "TypeScript distribution differs from the declared developer compiler",
@@ -176,6 +178,22 @@ def main():
     try:
         with tempfile.TemporaryDirectory(prefix="pointer-web-", dir=temporary) as directory:
             work = Path(directory)
+            tooling = Path(os.environ["NAVI_SDK_TOOLING_SOURCE"])
+            require(tooling.is_absolute(), "SDK Tooling source must be absolute")
+            pin = re.fullmatch(
+                r"uvx --from git\+https://github\.com/naviapps/sdk-tooling\.git@([0-9a-f]{40}) sdk-tooling",
+                mise["tasks"]["sdk-tooling"]["run"],
+            )
+            require(pin, "Expected a full SDK Tooling revision")
+            tooling_archive = work / "sdk-tooling.tar"
+            run(
+                ["/usr/bin/git", "-C", tooling, "archive", "--output", tooling_archive, pin[1]],
+                root,
+                env,
+            )
+            with tarfile.open(tooling_archive) as archive:
+                archive.extractall(work / "sdk-tooling", filter="data")
+            sdk_tooling = [str(python), "-I", "-B", str(work / "sdk-tooling/tasks/sdk")]
             type_archive = work / "typescript.tgz"
             with urllib.request.urlopen(type_pin["url"], timeout=120) as response:
                 type_bytes = response.read(type_pin["bytes"] + 1)
@@ -271,8 +289,18 @@ def main():
             for source in sorted(root.rglob("*.mjs")):
                 if ".web-build" not in source.parts:
                     run([node, "--check", source], root, env)
-            run(["/usr/bin/make", "check-web"], root, env, output / "web-check.log")
-            run([python, "-B", "-m", "tools.web", "--verify"], root, env, output / "web-verify.log")
+            run(
+                ["/usr/bin/make", "check-web", "SDK_TOOLING=" + shlex.join(sdk_tooling)],
+                root,
+                env,
+                output / "web-check.log",
+            )
+            run(
+                [*sdk_tooling, "python", "-m", "fixtures.distribution.web", "--verify"],
+                root,
+                env,
+                output / "web-verify.log",
+            )
             consumers = [
                 json.loads(line)
                 for line in (output / "web-check.log").read_text().splitlines()

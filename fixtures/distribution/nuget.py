@@ -16,9 +16,10 @@ import zipfile
 from contextlib import contextmanager
 from pathlib import Path
 
-from tools._tooling import load
-from tools.native import builder
-from tools.sdk import KINDS, SDK
+from sdk_tooling.adapters import load
+from sdk_tooling.native_plan import builder
+
+from .sdk import KINDS, SDK
 
 MACOS_RIDS = ("osx-arm64", "osx-x64")
 
@@ -215,7 +216,11 @@ class NuGetSDK:
                     if library.read_bytes() != archive.read(member):
                         raise ValueError("Selected native asset differs from the package")
                     if rid.startswith("win-"):
-                        from tools.windows import MACHINE, inspect_pe, public_exports
+                        from .windows import (
+                            MACHINE,
+                            inspect_pe,
+                            public_exports,
+                        )
 
                         windows_members = [
                             item.filename
@@ -296,7 +301,7 @@ def require_macos_host(rid, dotnet, env):
 
 
 def main():
-    from tools.windows import RID, WindowsSDK
+    from .windows import RID, WindowsSDK
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("pack", "check-package", "test-package"))
@@ -314,7 +319,7 @@ def main():
         parser.error("Checking a package requires one --rid and --feed")
     if not re.fullmatch(r"\d+\.\d+\.\d+-[0-9A-Za-z][0-9A-Za-z.-]*", args.version):
         parser.error("Local candidates require an explicit prerelease version")
-    root = Path(__file__).resolve().parent.parent
+    root = Path(__file__).resolve().parents[2]
     env = dict(
         os.environ,
         DOTNET_CLI_TELEMETRY_OPTOUT="1",

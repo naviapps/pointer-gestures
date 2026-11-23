@@ -1,11 +1,23 @@
 [macos]
 commands = [
   ["cargo", "fetch", "--locked"],
-  ["make", "check-distribution", "check-rust-consumer", "check-c-consumer", "check-dotnet"],
-  ["make", "check-consumer"],
+  [
+    "make",
+    'SDK_TOOLING=python3 -I -B "{tooling}/tasks/sdk"',
+    "check-distribution",
+    "check-rust-consumer",
+    "check-c-consumer",
+    "check-dotnet",
+  ],
+  ["make", 'SDK_TOOLING=python3 -I -B "{tooling}/tasks/sdk"', "check-consumer"],
   ["rustup", "target", "add", "wasm32-unknown-unknown"],
   ["cargo", "fetch", "--locked", "--manifest-path", "bindings/web/rust/Cargo.toml"],
-  ["make", "check-web"],
+  [
+    "make",
+    'SDK_TOOLING=python3 -I -B "{tooling}/tasks/sdk"',
+    "check-web",
+    "check-web-reproducibility",
+  ],
   [
     "python3",
     "-I",
@@ -25,7 +37,18 @@ bin = "wasm-bindgen-0.2.104-aarch64-apple-darwin"
 commands = [
   ["rustup", "install", "--no-self-update"],
   ["cargo", "fmt", "--all", "--", "--check"],
-  ["python", "-E", "-S", "-B", "-m", "unittest", "discover", "-s", "tools/tests"],
+  [
+    "python",
+    "-I",
+    "-B",
+    "{tooling}/tasks/sdk",
+    "python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "fixtures/distribution/tests",
+  ],
   [
     "python",
     "-I",
@@ -33,7 +56,7 @@ commands = [
     "{tooling}/tasks/sdk",
     "windows",
     "-m",
-    "tools.native_host",
+    "fixtures.distribution.native_host",
     "--architecture",
     "x86_64",
   ],

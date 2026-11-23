@@ -10,10 +10,16 @@ The optional cargo-xwin backend manages its Microsoft CRT/SDK cache separately.
 
 See the [SDK overview](../README.md) for consumer installation and portable API
 examples and the [development setup](../README.md#development-and-acceptance)
-for pinned tools and offline use. The build and package commands below require
-the [distribution tooling checkout](../README.md#distribution-verification).
-In PowerShell, set `$env:NAVI_SDK_TOOLING_SOURCE` to its absolute path.
-Run source commands with the prepared tools on `PATH`, or prefix them with `mise exec --`.
+for pinned tools and offline use. Commands use the SDK Tooling revision pinned in
+`mise.toml`. In a prepared Windows developer shell, run the same commands using
+the source launcher from a clean checkout at that revision:
+
+```powershell
+$sdkTooling = Join-Path 'C:/src/sdk-tooling' 'tasks/sdk'
+```
+
+Run Windows commands with the prepared tools on `PATH`. On macOS and Linux,
+`mise run sdk-tooling` selects the pinned CLI automatically.
 
 ## Requirements and validation boundaries
 
@@ -22,24 +28,20 @@ The included macOS frameworks have long paths; this repository-local Git setting
 avoids changing Windows policy. Package-consumer checks use the system temporary
 directory so a deeply nested checkout does not lengthen NuGet's extracted paths.
 
-- The Windows SDK runtime is `win-x64`. Install native Python 3.11+, the pinned
-  host Rust toolchain and its `x86_64-pc-windows-msvc` standard library.
+- The Windows SDK runtime is `win-x64`. Install the pinned native Python and Rust toolchain and its `x86_64-pc-windows-msvc` standard library.
 - Select the pinned x64 .NET 10 SDK through an absolute `DOTNET_BIN` path on
   ARM64 Windows. Consumers require a [supported .NET operating system](https://github.com/dotnet/core/blob/main/release-notes/10.0/supported-os.md).
 - Select host-native MSVC tools for the x64 target. The Windows ARM64 acceptance
   host uses ARM64 MSVC and executes x64 test programs under emulation.
 
-Examples use `python3`. In an MSVC developer shell where that name is unavailable,
-use the prepared `python` executable or `py -3` for the same module commands.
-
-On a Mac, `python3 -m tools.windows check` checks the x64 Windows Rust target, C layouts
+In an MSVC developer shell, use the prepared `python` executable to run the
+launcher. On a Mac, `make check-windows` checks the x64 Windows Rust target, C layouts
 when Clang is present, and the portable managed build. It does not link or run
 Windows binaries. The PE inspector's synthetic fixtures test malformed files,
 architecture, exports and dependencies; they are never shipped as DLLs.
 
 ```sh
-python3 -m tools.windows check
-python3 -m unittest discover -s tools/tests
+mise exec -- make check-windows check-tools
 ```
 
 `make check-dotnet` separately
@@ -226,8 +228,8 @@ Rust and MSVC toolchains. For managed execution checks, point `DOTNET_BIN`
 to the pinned x64 executable.
 
 ```powershell
-python -m tools.windows build
-python -m tools.windows verify
+python -I -B $sdkTooling python -m fixtures.distribution.windows build
+python -I -B $sdkTooling python -m fixtures.distribution.windows verify
 ```
 
 The build emits both SDK libraries for `win-x64`. Keep the full RID directories
@@ -251,7 +253,7 @@ With cargo-xwin and LLVM already installed and on `PATH`, the same build and PE
 inspection work without a Windows VM:
 
 ```sh
-python3 -m tools.windows build --cross --rid win-x64
+mise run sdk-tooling -- python -m fixtures.distribution.windows build --cross --rid win-x64
 ```
 
 The cross route uses `cargo xwin build` and records its version in each receipt.
@@ -267,7 +269,7 @@ below remains required for deployment.
 On the owned Windows host, run from the checkout used to build the libraries:
 
 ```powershell
-python -m tools.windows test-native
+python -I -B $sdkTooling python -m fixtures.distribution.windows test-native
 ```
 
 The driver checks the x64 PE machine of the C caller and staged DLL before
@@ -278,7 +280,7 @@ For recognition input, use the additional opt-in command **only in an owned,
 isolated, unlocked Windows desktop**:
 
 ```powershell
-python -m tools.windows test-input
+python -I -B $sdkTooling python -m fixtures.distribution.windows test-input
 ```
 
 It builds/runs the maintained Rust `desktop_probe` and managed adapter fixture.
@@ -330,7 +332,7 @@ GitHub Actions uses a Windows x64 runner. For x64 emulation on an owned Windows
 ARM64 machine, run:
 
 ```powershell
-python -m tools.native_host --architecture arm64
+python -I -B $sdkTooling python -m fixtures.distribution.native_host --architecture arm64
 ```
 
 The gate builds both x64 SDKs, runs C/Rust/managed tests and fresh-cache
@@ -346,7 +348,7 @@ Build and verify x64 from one source revision, then pack both libraries with
 the same explicit prerelease version and feed.
 
 ```powershell
-python -m tools.windows pack --version 0.1.0-local.1 --output C:/pointer-feed
+python -I -B $sdkTooling python -m fixtures.distribution.windows pack --version 0.1.0-local.1 --output C:/pointer-feed
 ```
 
 The tool validates source/output receipts and PE metadata before packing. Direct
@@ -355,7 +357,7 @@ existing candidate files are not replaced. Each package contains one managed API
 DLLs for the explicitly selected RID, and applicable third-party notices.
 Rendering depends on the recognition package at the candidate version. No Rust,
 Python, Visual Studio or repository access is needed by the installed consumer.
-Use [`tools.nuget pack`](../README.md#local-net-package-checks) with repeated `--rid`
+Use the [local .NET package commands](../README.md#local-net-package-checks) with repeated `--rid`
 arguments when a candidate should include Windows x64 and macOS runtimes.
 
 ## Check installation without Windows execution
@@ -363,7 +365,7 @@ arguments when a candidate should include Windows x64 and macOS runtimes.
 After packing both packages, run on a development host with .NET 10.
 
 ```sh
-python3 -m tools.windows check-package --rid win-x64 --version 0.1.0-local.1 --feed /path/to/pointer-feed
+mise run sdk-tooling -- python -m fixtures.distribution.windows check-package --rid win-x64 --version 0.1.0-local.1 --feed /path/to/pointer-feed
 ```
 
 This restores only from the local feed into an empty cache, compiles the maintained
@@ -377,7 +379,7 @@ installed reference packs are sufficient; external feeds are not a fallback.
 On Windows with the approved tools and the x64 .NET SDK:
 
 ```powershell
-python -m tools.windows test-package --version 0.1.0-local.1 --feed C:/pointer-feed
+python -I -B $sdkTooling python -m fixtures.distribution.windows test-package --version 0.1.0-local.1 --feed C:/pointer-feed
 ```
 
 This creates a clean consumer with `PackageReference`, an isolated empty NuGet
