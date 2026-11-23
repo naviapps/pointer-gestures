@@ -129,7 +129,11 @@ def build(root, directory):
     compiler = subprocess.check_output(["rustc", "--version"], text=True).strip()
     if not compiler.startswith("rustc " + expected_compiler + " "):
         raise SystemExit("Use the Rust compiler pinned in rust-toolchain.toml.")
-    binding = subprocess.check_output(["wasm-bindgen", "--version"], text=True).strip()
+    generator = os.environ.get("WASM_BINDGEN_BIN")
+    if generator is not None and not Path(generator).is_absolute():
+        raise SystemExit("WASM_BINDGEN_BIN must select an absolute executable path.")
+    generator = generator or "wasm-bindgen"
+    binding = subprocess.check_output([generator, "--version"], text=True).strip()
     if binding != "wasm-bindgen " + VERSION:
         raise SystemExit("Preinstall wasm-bindgen-cli " + VERSION + " matching the locked crate.")
     source_inputs = inputs(root)
@@ -178,7 +182,7 @@ def build(root, directory):
         stage = work / "package"
         subprocess.run(
             [
-                "wasm-bindgen",
+                generator,
                 str(target / "wasm32-unknown-unknown/release/pointer_gestures_wasm.wasm"),
                 "--target",
                 "web",
