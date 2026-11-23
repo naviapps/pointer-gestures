@@ -1,4 +1,5 @@
 {
+  "abiProbeArchitecture": "arm64",
   "abiVersion": 8,
   "architectures": [
     "arm64",
@@ -6,6 +7,82 @@
   ],
   "buildScriptInputDirectories": [],
   "buildScriptInputRoots": [],
+  "cargoBuild": {
+    "aarch64-apple-darwin": [
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "pointer-gesture-recognition",
+        "source": "workspace",
+        "targetName": "pointer_gesture_recognition",
+        "version": "0.1.0"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "pointer-gesture-rendering",
+        "source": "workspace",
+        "targetName": "pointer_gesture_rendering",
+        "version": "0.1.0"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "cdylib"
+        ],
+        "name": "pointer-gesture-rendering-ffi",
+        "source": "workspace",
+        "targetName": "pointer_gesture_rendering_ffi",
+        "version": "0.1.0"
+      }
+    ],
+    "x86_64-apple-darwin": [
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "lib"
+        ],
+        "name": "pointer-gesture-recognition",
+        "source": "workspace",
+        "targetName": "pointer_gesture_recognition",
+        "version": "0.1.0"
+      },
+      {
+        "compilation": "target",
+        "features": [
+          "default"
+        ],
+        "kind": [
+          "lib"
+        ],
+        "name": "pointer-gesture-rendering",
+        "source": "workspace",
+        "targetName": "pointer_gesture_rendering",
+        "version": "0.1.0"
+      },
+      {
+        "compilation": "target",
+        "features": [],
+        "kind": [
+          "cdylib"
+        ],
+        "name": "pointer-gesture-rendering-ffi",
+        "source": "workspace",
+        "targetName": "pointer_gesture_rendering_ffi",
+        "version": "0.1.0"
+      }
+    ]
+  },
   "compiler": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1",
   "configuration": {
     "ffi": "crates/rendering-ffi",
@@ -666,10 +743,12 @@
   "schema": 3,
   "toolInputs": {
     "artifacts.py": "1754138ef1807e593e1d228d678cb396398435c6ff69c1d96fadc80fe443747e",
+    "c_compiler.py": "3005695b914b6e416c7eddd1f31d3ee37a633f4176ea7a131b59935d8ad95594",
     "cargo.py": "ad44c7666dfcff89d35c7008ccada6910a6ea6f299a9f955e917f841a563a597",
+    "cargo_build.py": "0aee57b901cbfc9ed8bebff51725f9a71d242f904e184b1c9965965741dabba4",
     "crates/rustc-dep-info/src/main.rs": "0a59fb162cc855001899ad9b83875fac0ed837e73caafd116453352c9b56e2cf",
-    "ffi.py": "805e7507a2a59c5c5d3edb2d654a2276ea8677ac1b755aa0dee466af87651d85",
+    "ffi.py": "4e3f22f317710575236e124899b4dcadf6ddc1eed8482294a8a5874314d010ce",
     "native_plan.py": "126791c1993dded2be0f46784a28528d40ed1218c46d1f1aadb2c026f047dcd3",
-    "xcframework.py": "37d848a3d58af479b8c13c6466cef1917029e4a9709e986a66a6a4ff1e431e08"
+    "xcframework.py": "277c2e390f94f45614479e289deccea9c2c3e0af71d5c6ce5421872161671558"
   }
 }

@@ -22,6 +22,10 @@ class WindowsPackageWorkspaceTests(unittest.TestCase):
         root = Path(self.enterContext(tempfile.TemporaryDirectory()))
         sdk = NuGetSDK(root, "recognition", {}, "dotnet", root / "reports")
         self.sdk = sdk
+        (root / "global.json").write_text(
+            '{"sdk":{"version":"10.0.403","rollForward":"disable"}}',
+            encoding="utf-8",
+        )
         self.feed = root / "feed"
         self.feed.mkdir()
         sdk.layout.nuget_consumer.parent.mkdir(parents=True)
@@ -42,6 +46,9 @@ class WindowsPackageWorkspaceTests(unittest.TestCase):
         )
 
     def dotnet_fixture(self, argv, *, cwd, env, check):
+        self.assertEqual(
+            (cwd / "global.json").read_bytes(), (self.sdk.root / "global.json").read_bytes()
+        )
         kind = argv[1]
         if kind == "restore":
             relative = f"{self.sdk.id.lower()}/{self.version}"

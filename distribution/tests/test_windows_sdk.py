@@ -68,7 +68,9 @@ class PointerDLLPolicyTests(unittest.TestCase):
 class WindowsTargetSelectionTests(unittest.TestCase):
     def setUp(self):
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory()))
-        (self.root / "mise.toml").write_text('[tools]\ndotnet = "10.0.403"\n')
+        (self.root / "global.json").write_text(
+            '{"sdk":{"version":"10.0.403","rollForward":"disable"}}'
+        )
         self.enterContext(
             patch.object(
                 windows_sdk,

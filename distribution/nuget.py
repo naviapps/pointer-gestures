@@ -119,6 +119,8 @@ class NuGetSDK:
         package_hash = digest(candidate)
         self.report_dir.mkdir(parents=True, exist_ok=True)
         with package_workspace(rid) as work:
+            # The consumer starts outside the SDK checkout; retain its exact .NET SDK selection.
+            shutil.copyfile(self.root / "global.json", work / "global.json")
             project = ET.Element("Project", Sdk="Microsoft.NET.Sdk")
             props = ET.SubElement(project, "PropertyGroup")
             for key, value in {

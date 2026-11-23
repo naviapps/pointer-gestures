@@ -6,7 +6,6 @@ consumable; rendering uses recognition's shared values. Fetch the locked registr
 dependencies (`cargo fetch --locked`) before offline builds. Tools are preinstalled;
 the driver starts no VM, uses no hosted CI and publishes no package. It sets
 `RUSTUP_AUTO_INSTALL=0` for child commands to prevent implicit installation.
-The optional cargo-xwin backend manages its Microsoft CRT/SDK cache separately.
 
 See the [SDK overview](../README.md) for consumer installation and portable API
 examples and the [development setup](../README.md#development-and-acceptance)
@@ -15,7 +14,7 @@ for pinned tools and offline use. Commands use the SDK Tooling revision pinned i
 the source launcher from a clean checkout at that revision:
 
 ```powershell
-$sdkTooling = Join-Path 'C:/src/sdk-tooling' 'tasks/sdk'
+$sdkTooling = Join-Path 'C:/src/sdk-tooling' 'ci/run_sdk_tooling.py'
 ```
 
 Run Windows commands with the prepared tools on `PATH`. On macOS and Linux,
@@ -247,24 +246,7 @@ Receipt paths use forward slashes on every host, so a copied RID directory can b
 verified against the same clean SDK sources on Windows.
 No Windows support claim follows from producing a receipt alone.
 
-### Cross-link on macOS or Linux
-
-With cargo-xwin and LLVM already installed and on `PATH`, the same build and PE
-inspection work without a Windows VM:
-
-```sh
-mise run sdk-tooling -- python -m distribution.windows_sdk build --cross --rid win-x64
-```
-
-The cross route uses `cargo xwin build` and records its version in each receipt.
-LLVM is keg-only on Homebrew; add its `bin` directory to this command's environment,
-not to global shell configuration. See [cargo-xwin](https://github.com/rust-cross/cargo-xwin)
-for installation and Microsoft SDK license terms. Its first run can download the
-CRT/SDK; `XWIN_CACHE_DIR` selects a reusable cache, defaulting to
-`.native-build/windows/<recognition|rendering>/xwin`. Its `XWIN_SDK_VERSION` and `XWIN_CRT_VERSION` controls
-can pin those inputs. No Windows executable is run by this route. Rust does not
-officially support MSVC cross-compilation from a non-Windows host; native testing
-below remains required for deployment.
+### Run native acceptance
 
 On the owned Windows host, run from the checkout used to build the libraries:
 

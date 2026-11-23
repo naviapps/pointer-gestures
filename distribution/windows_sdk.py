@@ -9,11 +9,11 @@ import re
 import shutil
 import subprocess
 import sys
-import tomllib
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from sdk_tooling.adapters import load, support_inputs
+from sdk_tooling.dotnet import pinned_sdk_version
 from sdk_tooling.native_plan import ffi_product
 
 from .nuget import NuGetSDK
@@ -182,12 +182,11 @@ class WindowsSDK:
             dotnet = windows.target_dotnet(host, "x64", env)
         self.env = env
         if managed:
-            sdk_version = tomllib.loads((self.root / "mise.toml").read_text())["tools"]["dotnet"]
-            if (
-                subprocess.check_output([dotnet, "--version"], env=env, text=True).strip()
-                != sdk_version
-            ):
-                raise ValueError("Use the pinned x64 .NET SDK")
+            version = subprocess.check_output(
+                [dotnet, "--version"], cwd=self.root, env=env, text=True
+            ).strip()
+            if version != pinned_sdk_version(self.root):
+                raise ValueError("Use the pinned x64 .NET SDK from global.json")
             self.dotnet = dotnet
             self.nuget = NuGetSDK(self.root, self.layout.kind, env, dotnet, self.native)
         return host, tools
@@ -200,12 +199,8 @@ class WindowsSDK:
             "executionMode": "x64-emulation" if host == "arm64" else "native",
         }
 
-    def build(self, cross=False):
-        if cross:
-            native_selection = {}
-        else:
-            host, tools = self.prepare_windows(msvc=True, managed=False)
-            native_selection = {"native_host": host, "tools": tools}
+    def build(self):
+        host, tools = self.prepare_windows(msvc=True, managed=False)
 
         def stage(stage):
             shutil.copytree(self.ffi / "include", stage / "include")
@@ -219,13 +214,13 @@ class WindowsSDK:
         load("windows").build_library(
             self.product,
             self.env,
+            tools=tools,
             architecture="x64",
             output_root=self.native,
-            cross=cross,
+            native_host=host,
             source_inputs=self.sources,
             inspect=lambda path: inspect_pe(path, MACHINE, self.symbols),
             stage_extra=stage,
-            **native_selection,
         )
         print(f"Built and inspected {RID}. Windows execution is a separate check.")
 
@@ -506,15 +501,10 @@ def main():
     )
     parser.add_argument("--sdk", choices=KINDS)
     parser.add_argument("--rid", choices=(RID,), default=RID)
-    parser.add_argument(
-        "--cross", action="store_true", help="Build with preinstalled cargo-xwin/LLVM"
-    )
     parser.add_argument("--version")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--feed", type=Path)
     args = parser.parse_args()
-    if args.cross and args.command != "build":
-        parser.error("--cross is only valid with build")
     if args.command == "test-input" and args.sdk == "rendering":
         parser.error("Input capture belongs to recognition")
     selected = (
@@ -527,7 +517,7 @@ def main():
             if args.command == "check":
                 sdk.check(check_rust=index == 0)
             elif args.command == "build":
-                sdk.build(args.cross)
+                sdk.build()
             elif args.command in ("verify", "test-native", "test-input"):
                 {
                     "verify": sdk.verify,
