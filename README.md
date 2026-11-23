@@ -49,8 +49,8 @@ The recognition/rendering packages under `crates` separately own portable logic,
 C ABI callers in `tests/c`, and Windows resources. Named .NET projects and tests
 live under `bindings/dotnet`; its `examples` directory is a runnable consumer.
 `bindings/web` owns the independent browser adapter and nested Rust workspace.
-Cross-language guides live in `docs`; SDK build policy lives in `tools` and uses
-pinned `sdk-tooling` mechanisms. `Artifacts` and `ThirdParty` are retained consumer
+Cross-language guides live in `docs`, and SDK build tools live in `tools`.
+`Artifacts` and `ThirdParty` are retained consumer
 inputs; `.native-build` and `.web-build` are ignored developer output.
 
 ## Swift installation
@@ -178,8 +178,7 @@ on the rendering dependency when the client needs CPU rasterization.
 
 From a clean, complete SDK checkout with the pinned compiler,
 `make check-rust-consumer` validates recognition-only, default geometry and explicit
-raster consumers. See the [shared consumer mechanism](https://github.com/naviapps/sdk-tooling/blob/main/docs/REFERENCE.md#consumer-verification)
-for isolation and evidence. Ordinary Cargo users need no SDK developer tooling.
+raster consumers in an isolated workspace. Ordinary Cargo users need no SDK developer tools.
 
 ## C installation on macOS
 
@@ -204,9 +203,8 @@ installation uses the prebuilt framework without Rust, Python or SDK build tools
 native C runtime acceptance is a separate check.
 
 From a clean committed SDK checkout on owned macOS, `make check-c-consumer`
-validates separate recognition and rendering clients with Clang from the macOS
-developer tools. The [shared consumer mechanism](https://github.com/naviapps/sdk-tooling/blob/main/docs/REFERENCE.md#consumer-verification)
-describes installation isolation and retained evidence.
+validates separate recognition and rendering clients against copies of the frameworks
+with Clang from the macOS developer tools.
 
 ## Browser usage
 
@@ -444,14 +442,10 @@ Do not change global DPI, sharing, permissions or security settings for validati
 
 ## Development and acceptance
 
-Developer commands use the immutable `sdk-tooling` revision in
-`tools/tooling-sources.json`. See [shared developer setup](https://github.com/naviapps/sdk-tooling#readme)
-for verified caches, offline use and source overrides. Ordinary SwiftPM and NuGet
-consumers do not need that setup.
-
-Review `mise.toml` and `tools/tooling-sources.json`, then prepare the declared tools
-from the repository root. Installation may download missing tools; fetch registry
-dependencies while network access is intended before running offline checks.
+Run developer commands from this checkout. Review `mise.toml` and
+`rust-toolchain.toml`, then install the declared tools and fetch the locked Cargo
+dependencies before running offline checks. Ordinary SwiftPM and NuGet
+consumers do not need the developer setup.
 
 ```sh
 mise trust mise.toml
@@ -462,18 +456,16 @@ mise exec -- make check-dotnet
 ```
 
 Run `mise run lint` before builds or `mise run format` to format owned source.
-The pinned [shared quality policy](https://github.com/naviapps/sdk-tooling/blob/main/docs/REFERENCE.md#quality-and-documentation-checks)
-excludes vendored code, native artifacts and original notices.
+The quality checks exclude vendored code, native artifacts and original notices.
 
 When native sources change, run `mise exec -- make native` before verification.
-It rebuilds the independent macOS frameworks using the
-[shared native artifact mechanism](https://github.com/naviapps/sdk-tooling/blob/main/docs/REFERENCE.md#native-artifacts-and-provenance).
+It rebuilds the independent macOS frameworks and records the sources, toolchain,
+dependency provenance and exact artifact hashes in the build receipts.
 `make check` covers native verification, Rust, Swift tests and Release builds,
 C ownership and API documentation. `make lint` checks Rust formatting for
 both the native and Web workspaces.
-It also builds and runs independent Swift consumers against the existing frameworks;
-verification and [consumer checks](https://github.com/naviapps/sdk-tooling/blob/main/docs/REFERENCE.md#consumer-verification)
-do not regenerate them. `make check-dotnet` builds
+It also builds and runs independent Swift consumers against the existing frameworks
+without regenerating the frameworks. `make check-dotnet` builds
 separate host-native Rust libraries and runs managed fixtures and the README examples.
 Run Python modules from the repository root. `python3 -m tools.native --sdk recognition`
 selects one framework; omitting `--sdk` handles both. `python3 -m tools.windows --help`
@@ -498,7 +490,7 @@ never belong in this reusable SDK repository.
 Pack both libraries at the same local prerelease version. Include `--rid` once
 per target. macOS assets come from the verified universal frameworks. Windows
 packages use the verified `win-x64` native libraries. See
-[Windows development](docs/WINDOWS.md#pack-local-candidates) for approved tooling.
+[Windows development](docs/WINDOWS.md#pack-local-candidates) for the x64 preparation steps.
 
 ```sh
 mise exec -- python3 -m tools.nuget pack --rid osx-arm64 --rid osx-x64 \

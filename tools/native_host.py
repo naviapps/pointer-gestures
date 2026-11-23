@@ -14,7 +14,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from tools._tooling import add_candidate_options, load, select_candidate, verify
+from tools._tooling import load, support_inputs
 from tools.sdk import KINDS, SDK
 from tools.source import source_identity
 from tools.windows import RID, TARGET, WindowsSDK
@@ -109,19 +109,12 @@ def main():
         action="store_true",
         help="Install global input hooks and inject into an owned isolated Windows fixture",
     )
-    add_candidate_options(parser)
     args = parser.parse_args()
-    if sys.platform != "win32" and (
-        args.tooling_source is not None or args.tooling_revision is not None
-    ):
-        parser.error("Approved tooling selection is for Windows x64 acceptance")
-    if sys.platform == "win32" and args.tooling_source is None:
-        parser.error("Windows acceptance requires the approved x64 tooling checkout and revision")
-    tooling_options = select_candidate(parser, args, absolute=True)
     if args.desktop_input and sys.platform != "win32":
         parser.error("--desktop-input requires Windows")
     root = Path(__file__).resolve().parent.parent
     source_commit, fingerprint = source_identity(root)
+    tooling = support_inputs()
     artifacts = (
         Path(os.environ["NAVI_CI_ARTIFACTS"]) if os.environ.get("NAVI_CI_ARTIFACTS") else None
     )
@@ -203,7 +196,7 @@ def main():
         notice_index = root / "ThirdParty/registry-notices.json"
         retained_index = notice_index.read_bytes()
         for operation in ("build", "test-native"):
-            run([sys.executable, "-m", "tools.windows", operation, *tooling_options])
+            run([sys.executable, "-m", "tools.windows", operation])
             if notice_index.read_bytes() != retained_index:
                 raise SystemExit(
                     "Native validation changed the retained notice index; update and verify its source first."
@@ -255,7 +248,7 @@ def main():
             run([dotnet, output / (project.stem + ".dll")])
 
         if args.desktop_input:
-            run([sys.executable, "-m", "tools.windows", "test-input", *tooling_options])
+            run([sys.executable, "-m", "tools.windows", "test-input"])
         project = root / "bindings/dotnet/examples/windows"
         run(
             [
@@ -329,7 +322,6 @@ def main():
                 version,
                 "--output",
                 directory,
-                *tooling_options,
             ]
         )
         run(
@@ -344,11 +336,10 @@ def main():
                 version,
                 "--feed",
                 directory,
-                *tooling_options,
             ]
         )
-        if is_windows:
-            verify(args.tooling_source, args.tooling_revision)
+        if support_inputs() != tooling:
+            raise ValueError("The SDK's local build tools changed during native acceptance")
         if artifacts:
             retain_verified_packages(root, Path(directory), artifacts, rid, version)
     result = {
@@ -357,7 +348,7 @@ def main():
         "architecture": machine,
         "runtime": rid,
         **execution,
-        "toolingRevision": args.tooling_revision,
+        "toolInputs": tooling,
         "source": source_commit,
         "sourceFingerprint": fingerprint,
         "desktopInput": args.desktop_input,

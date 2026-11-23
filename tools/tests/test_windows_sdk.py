@@ -1,4 +1,4 @@
-"""Pointer owns the system-DLL allowlist; shared tooling owns PE parsing tests."""
+"""Exercise the SDK's Windows toolchain routing, export and import policies."""
 
 import tempfile
 import unittest
@@ -74,13 +74,12 @@ class WindowsTargetSelectionTests(unittest.TestCase):
         )
         self.sdk = windows.WindowsSDK(self.root)
 
-    def test_native_checks_require_the_separately_approved_tooling(self):
+    def test_native_checks_require_windows(self):
         with (
-            patch.object(windows.sys, "platform", "win32"),
-            patch.object(windows, "candidate_selected", return_value=False),
+            patch.object(windows.sys, "platform", "darwin"),
             patch.object(windows, "load") as load,
         ):
-            with self.assertRaisesRegex(ValueError, "approved x64 tooling"):
+            with self.assertRaisesRegex(ValueError, "requires a Windows worker"):
                 self.sdk.prepare_windows()
             load.assert_not_called()
 
@@ -95,7 +94,6 @@ class WindowsTargetSelectionTests(unittest.TestCase):
         check_output = Mock(return_value="10.0.403\n")
         with (
             patch.object(windows.sys, "platform", "win32"),
-            patch.object(windows, "candidate_selected", return_value=True),
             patch.object(windows, "load", return_value=shared),
             patch.object(windows.subprocess, "check_output", check_output),
         ):
@@ -122,16 +120,16 @@ class WindowsTargetSelectionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "pinned x64 .NET SDK"):
                 self.sdk.prepare_windows()
 
-    def test_cli_rejects_active_arm64_rid_without_selecting_tooling(self):
+    def test_cli_rejects_an_arm64_runtime(self):
         with (
             patch.object(windows.sys, "argv", ["windows", "verify", "--rid", "win-arm64"]),
-            patch.object(windows, "select_candidate") as select,
+            patch.object(windows, "load") as load,
             patch("sys.stderr"),
         ):
             with self.assertRaises(SystemExit) as exit:
                 windows.main()
             self.assertEqual(exit.exception.code, 2)
-            select.assert_not_called()
+            load.assert_not_called()
 
 
 if __name__ == "__main__":

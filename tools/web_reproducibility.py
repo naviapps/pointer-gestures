@@ -15,7 +15,6 @@ def check(root, revision):
         os.environ,
         GIT_NO_LAZY_FETCH="1",
         NAVI_CI_SOURCE_COMMIT=revision,
-        NAVI_SDK_TOOLING_OFFLINE="1",
     )
     env.pop("NAVI_CI_SOURCE_FINGERPRINT", None)
     with tempfile.TemporaryDirectory(prefix="pointer-web-reproducibility-") as temporary:

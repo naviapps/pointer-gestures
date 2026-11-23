@@ -1,9 +1,8 @@
 # SDK development
 
 This repository owns independent recognition and rendering libraries, their native
-adapters, SDK-specific build policy and acceptance fixtures. Shared build
-mechanisms belong to sdk-tooling. Keep reusable mechanisms here and product
-policy, permissions onboarding, application commands and persistence in hosts. The
+adapters, build tools and acceptance fixtures. Keep reusable mechanisms here and
+product policy, permissions onboarding, application commands and persistence in hosts. The
 optional macOS and Windows rendering adapters own overlay resources; hosts explicitly
 activate them and supply appearance policy.
 Read README.md and the affected Sources/*/*.docc catalog before API changes.

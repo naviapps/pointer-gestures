@@ -13,7 +13,7 @@ import tomllib
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from tools._tooling import add_candidate_options, candidate_selected, load, select_candidate
+from tools._tooling import load, support_inputs
 from tools.native import builder
 from tools.nuget import NuGetSDK
 from tools.sdk import KINDS
@@ -92,11 +92,10 @@ class WindowsSDK:
         subprocess.run([str(a) for a in args], cwd=self.root, env=self.env, check=True, **kwargs)
 
     def sources(self):
-        policy = [
-            self.root / "tools" / name
-            for name in ("windows.py", "native.py", "sdk.py", "_tooling.py")
-        ]
-        return dict(self.builder.build_sources(), **self.builder.hashes(policy, self.root))
+        policy = [self.root / "tools" / name for name in ("windows.py", "native.py", "sdk.py")]
+        return (
+            self.builder.build_sources() | self.builder.hashes(policy, self.root) | support_inputs()
+        )
 
     def rust(self):
         compiler = subprocess.check_output(
@@ -172,8 +171,6 @@ class WindowsSDK:
     def prepare_windows(self, *, msvc=False, managed=True):
         if sys.platform != "win32":
             raise ValueError("This check requires a Windows worker")
-        if not candidate_selected():
-            raise ValueError("Use the approved x64 tooling checkout and revision for native checks")
         windows = load("windows")
         host = windows.host_architecture()
         if host not in HOST_TARGETS:
@@ -512,7 +509,6 @@ def main():
     )
     parser.add_argument("--sdk", choices=KINDS)
     parser.add_argument("--rid", choices=(RID,), default=RID)
-    add_candidate_options(parser)
     parser.add_argument(
         "--cross", action="store_true", help="Build with preinstalled cargo-xwin/LLVM"
     )
@@ -529,7 +525,6 @@ def main():
     )
     root = Path(__file__).resolve().parents[1]
     try:
-        select_candidate(parser, args, absolute=True)
         for index, kind in enumerate(selected):
             sdk = WindowsSDK(root, kind)
             if args.command == "check":

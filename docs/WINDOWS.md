@@ -9,8 +9,8 @@ the driver starts no VM, uses no hosted CI and publishes no package. It sets
 The optional cargo-xwin backend manages its Microsoft CRT/SDK cache separately.
 
 See the [SDK overview](../README.md) for consumer installation and portable API
-examples, and [shared developer setup](https://github.com/naviapps/sdk-tooling#readme)
-for pinned tools, verified caches and offline use. Run source commands with the
+examples and the [development setup](../README.md#development-and-acceptance)
+for pinned tools and offline use. Run source commands with the
 prepared tools on `PATH`, or prefix them with `mise exec --`.
 
 ## Requirements and validation boundaries
@@ -26,9 +26,6 @@ directory so a deeply nested checkout does not lengthen NuGet's extracted paths.
   ARM64 Windows. Consumers require a [supported .NET operating system](https://github.com/dotnet/core/blob/main/release-notes/10.0/supported-os.md).
 - Select host-native MSVC tools for the x64 target. The Windows ARM64 acceptance
   host uses ARM64 MSVC and executes x64 test programs under emulation.
-- Select an approved local SDK Tooling checkout with `--tooling-source`
-  and its full commit with `--tooling-revision` for Windows native operations.
-  The driver verifies the revision and its checkout bytes before import.
 
 Examples use `python3`. In an MSVC developer shell where that name is unavailable,
 use the prepared `python` executable or `py -3` for the same module commands.
@@ -219,23 +216,20 @@ and observation ordering remain owned by the Windows adapter.
 
 ## Build and inspect Windows x64
 
-Windows builds use the pinned
-[shared native artifact mechanism](https://github.com/naviapps/sdk-tooling/blob/main/docs/REFERENCE.md#native-artifacts-and-provenance).
-This SDK owns its header layout, static-runtime import policy, C/.NET consumers
-and native acceptance fixtures.
+The SDK's build checks cover its header layout, static-runtime import policy,
+C/.NET consumers and native acceptance fixtures.
 
 From native ARM64 Windows Python, select the x64 targets of the host-native
 Rust and MSVC toolchains. For managed execution checks, point `DOTNET_BIN`
-to the pinned x64 executable. In the following commands, substitute the absolute checkout path and approved
-full Git commit for `$toolingSource` and `$toolingRevision`.
+to the pinned x64 executable.
 
 ```powershell
-python -m tools.windows build --tooling-source $toolingSource --tooling-revision $toolingRevision
-python -m tools.windows verify --tooling-source $toolingSource --tooling-revision $toolingRevision
+python -m tools.windows build
+python -m tools.windows verify
 ```
 
 The build emits both SDK libraries for `win-x64`. Keep the full RID directories
-with the same SDK and tooling revisions when moving candidates between hosts.
+with the same SDK revision when moving candidates between hosts.
 Use the original immutable SDK checkout to verify a historical ARM64 build.
 
 Outputs are under `.native-build/windows/<recognition|rendering>/win-x64/`: DLL, import library, public C
@@ -268,10 +262,10 @@ can pin those inputs. No Windows executable is run by this route. Rust does not
 officially support MSVC cross-compilation from a non-Windows host; native testing
 below remains required for deployment.
 
-On the owned Windows host, run from the repository root with the same tooling:
+On the owned Windows host, run from the checkout used to build the libraries:
 
 ```powershell
-python -m tools.windows test-native --tooling-source $toolingSource --tooling-revision $toolingRevision
+python -m tools.windows test-native
 ```
 
 The driver checks the x64 PE machine of the C caller and staged DLL before
@@ -282,7 +276,7 @@ For recognition input, use the additional opt-in command **only in an owned,
 isolated, unlocked Windows desktop**:
 
 ```powershell
-python -m tools.windows test-input --tooling-source $toolingSource --tooling-revision $toolingRevision
+python -m tools.windows test-input
 ```
 
 It builds/runs the maintained Rust `desktop_probe` and managed adapter fixture.
@@ -330,18 +324,18 @@ multi-monitor or mixed-DPI hardware support.
 
 ## Native host gate
 
-GitHub Actions uses a Windows x64 runner and fetches the pinned SDK Tooling
-revision. For x64 emulation on an owned Windows ARM64 machine, run:
+GitHub Actions uses a Windows x64 runner. For x64 emulation on an owned Windows
+ARM64 machine, run:
 
 ```powershell
-python -m tools.native_host --architecture arm64 --tooling-source $toolingSource --tooling-revision $toolingRevision
+python -m tools.native_host --architecture arm64
 ```
 
 The gate builds both x64 SDKs, runs C/Rust/managed tests and fresh-cache
 NuGet consumers, and compiles the WinForms example. Pass `--desktop-input` in an owned Windows desktop
 to exercise the native input receiver and WinForms drawing and click-through.
 The Windows receipt distinguishes x64 emulation from native x64 execution.
-The macOS entry point selects its pinned tooling and matching macOS runtime.
+The macOS entry point selects the matching macOS runtime.
 The gate checks that the retained notice index matches the checked source.
 
 ## Pack local candidates
@@ -350,7 +344,7 @@ Build and verify x64 from one source revision, then pack both libraries with
 the same explicit prerelease version and feed.
 
 ```powershell
-python -m tools.windows pack --version 0.1.0-local.1 --output C:/pointer-feed --tooling-source $toolingSource --tooling-revision $toolingRevision
+python -m tools.windows pack --version 0.1.0-local.1 --output C:/pointer-feed
 ```
 
 The tool validates source/output receipts and PE metadata before packing. Direct
@@ -361,12 +355,10 @@ Rendering depends on the recognition package at the candidate version. No Rust,
 Python, Visual Studio or repository access is needed by the installed consumer.
 Use [`tools.nuget pack`](../README.md#local-net-package-checks) with repeated `--rid`
 arguments when a candidate should include Windows x64 and macOS runtimes.
-Pass the same tooling arguments for the Windows build receipts.
 
 ## Check installation without Windows execution
 
-After packing both packages, run on a development host with .NET 10. Pass
-the matching approved tooling arguments if you explicitly select tooling.
+After packing both packages, run on a development host with .NET 10.
 
 ```sh
 python3 -m tools.windows check-package --rid win-x64 --version 0.1.0-local.1 --feed /path/to/pointer-feed
@@ -383,7 +375,7 @@ installed reference packs are sufficient; external feeds are not a fallback.
 On Windows with the approved tools and the x64 .NET SDK:
 
 ```powershell
-python -m tools.windows test-package --version 0.1.0-local.1 --feed C:/pointer-feed --tooling-source $toolingSource --tooling-revision $toolingRevision
+python -m tools.windows test-package --version 0.1.0-local.1 --feed C:/pointer-feed
 ```
 
 This creates a clean consumer with `PackageReference`, an isolated empty NuGet

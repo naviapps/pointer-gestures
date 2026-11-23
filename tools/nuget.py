@@ -16,7 +16,7 @@ import zipfile
 from contextlib import contextmanager
 from pathlib import Path
 
-from tools._tooling import add_candidate_options, candidate_selected, load, select_candidate
+from tools._tooling import load
 from tools.native import builder
 from tools.sdk import KINDS, SDK
 
@@ -31,17 +31,11 @@ def digest(path):
 def package_workspace(rid):
     prefix = "pointer-package-"
     if rid.startswith("win-"):
-        try:
-            workspaces = load("workspaces")
-        except ModuleNotFoundError as error:
-            if error.name != "sdk_tooling.workspaces":
-                raise
-        else:
-            with workspaces.temporary_workspace(None, prefix=prefix) as work:
-                yield work
-            return
-    with tempfile.TemporaryDirectory(prefix=prefix) as temporary:
-        yield Path(temporary)
+        with load("workspaces").temporary_workspace(None, prefix=prefix) as work:
+            yield work
+    else:
+        with tempfile.TemporaryDirectory(prefix=prefix) as temporary:
+            yield Path(temporary)
 
 
 class NuGetSDK:
@@ -280,24 +274,7 @@ class NuGetSDK:
 
 def macos_asset(root, kind):
     native = builder(root, kind)
-    if candidate_selected():
-        # A mixed package checks the tracked framework with its original tool pin.
-        subprocess.run(
-            [
-                sys.executable,
-                "-E",
-                "-S",
-                "-B",
-                "-c",
-                "from pathlib import Path; from tools.nuget import macos_asset; "
-                "import sys; macos_asset(Path.cwd(), sys.argv[1])",
-                kind,
-            ],
-            cwd=root,
-            check=True,
-        )
-    else:
-        native.verify(inspect_native=sys.platform == "darwin")
+    native.verify(inspect_native=sys.platform == "darwin")
     library = (
         native.artifact / "macos-arm64_x86_64" / (native.module + ".framework") / native.module
     )
@@ -325,7 +302,6 @@ def main():
     parser.add_argument("command", choices=("pack", "check-package", "test-package"))
     parser.add_argument("--sdk", choices=KINDS)
     parser.add_argument("--rid", action="append", choices=(*MACOS_RIDS, RID), required=True)
-    add_candidate_options(parser)
     parser.add_argument("--version", required=True)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--feed", type=Path)
@@ -349,11 +325,6 @@ def main():
     )
     dotnet = env.get("DOTNET_BIN") or shutil.which("dotnet") or "dotnet"
     try:
-        if (
-            args.tooling_source is not None or args.tooling_revision is not None
-        ) and RID not in rids:
-            parser.error("Approved tooling selection is for Windows x64 operations")
-        select_candidate(parser, args, absolute=True)
         if args.command == "test-package" and rids[0] in MACOS_RIDS:
             require_macos_host(rids[0], dotnet, env)
         for kind in (args.sdk,) if args.sdk else KINDS:

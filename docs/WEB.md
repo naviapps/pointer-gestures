@@ -160,9 +160,8 @@ from `maximumPoints`, including when both deadlines are disabled.
 These are SDK development commands. Clone the
 [source repository](https://github.com/naviapps/pointer-gestures) and run them from
 its root; the generated consumer package does not contain build tools or manifests.
-Prepare the pinned tools using the
-[shared developer setup](https://github.com/naviapps/sdk-tooling#readme), selecting
-them with `mise exec --` when running the commands below.
+Prepare the pinned tools using the [development setup](../README.md#development-and-acceptance)
+and prefix the commands below with `mise exec --`.
 
 Use the repository's pinned Rust compiler and preinstall `wasm32-unknown-unknown`,
 `wasm-bindgen-cli` 0.2.104 and the Node.js and TypeScript versions in `mise.toml`.
@@ -196,8 +195,8 @@ this nested workspace does not alter native Cargo.lock or framework receipts.
 Run `mise exec -- make check-web-reproducibility` from a local Git checkout to
 build its committed HEAD offline from two fresh source paths, including one with
 spaces. The check compares every generated package file, including Wasm,
-provenance and checksums. Prepare the same pinned build tools and SDK Tooling
-cache first.
+provenance and checksums. Install the pinned build tools and fetch the locked
+dependencies before the offline check.
 
 `make check-web` also packs the generated directory with npm and installs that tarball
 offline into an unrelated temporary client with an empty npm cache and lifecycle

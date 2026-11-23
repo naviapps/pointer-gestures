@@ -97,24 +97,7 @@ class WindowsPackageWorkspaceTests(unittest.TestCase):
         self.assertEqual(report["result"], "passed")
         self.assertEqual(report["nativeLoading"], {"host-resolver": {"state": "loaded"}})
 
-    def test_ordinary_pinned_tooling_may_lack_shared_workspace(self):
-        missing = ModuleNotFoundError(name="sdk_tooling.workspaces")
-        with patch("tools.nuget.load", side_effect=missing):
-            self.consume()
-        self.assertTrue(json.loads(self.receipt.read_text())["windowsExecuted"])
-
-    def test_missing_dependency_is_not_a_missing_workspace_module(self):
-        missing = ModuleNotFoundError(name="missing_dependency")
-        with (
-            patch("tools.nuget.load", side_effect=missing),
-            self.assertRaises(ModuleNotFoundError) as ctx,
-        ):
-            self.consume()
-        self.assertIs(ctx.exception, missing)
-        self.run_dotnet.assert_not_called()
-        self.assertFalse(self.receipt.exists())
-
-    def test_shared_workspace_cleanup_failure_blocks_receipt(self):
+    def test_workspace_cleanup_failure_blocks_receipt(self):
         failure = PermissionError("A native loading fixture could not be removed")
 
         @contextmanager

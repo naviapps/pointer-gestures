@@ -42,6 +42,7 @@ def inputs(root):
     paths.extend((root / "ThirdParty/Rust").glob("*"))
     tooling = load("artifacts")
     result = tooling.hashes(paths, root)
+    # Keep the receipt's original input name for the local artifact helper.
     result["@sdk-tooling/artifacts.py"] = digest(Path(tooling.__file__))
     return result
 
