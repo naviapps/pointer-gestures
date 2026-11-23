@@ -245,7 +245,8 @@ def main():
                 source = root / f".native-build/windows/{dependency}/{rid}/{name}.dll"
                 destination = output / (name + ".dll")
                 shutil.copyfile(source, destination)
-            run([dotnet, output / (project.stem + ".dll")])
+            layout = root / f".native-build/windows/{kind}/test-{rid}/layout.txt"
+            run([dotnet, output / (project.stem + ".dll"), "--abi-layout", layout])
 
         if args.desktop_input:
             run(python_command(root, "-m", "distribution.windows_sdk", "test-input"))

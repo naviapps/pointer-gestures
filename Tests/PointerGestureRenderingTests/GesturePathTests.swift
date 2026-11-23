@@ -5,6 +5,20 @@ import XCTest
 @testable import PointerGestureRendering
 
 final class GesturePathTests: XCTestCase {
+  func testImportedCommandAndTraceLayout() {
+    typealias Command = MemoryLayout<PointerGestureRenderingCommand>
+    XCTAssertEqual(Command.stride, 56)
+    XCTAssertEqual(Command.alignment, 8)
+    XCTAssertEqual(Command.offset(of: \.point), 8)
+
+    typealias Trace = MemoryLayout<PointerGestureRenderingTraceView>
+    XCTAssertEqual(Trace.stride, 56)
+    XCTAssertEqual(Trace.alignment, 8)
+    XCTAssertEqual(Trace.offset(of: \.points), 16)
+    XCTAssertEqual(Trace.offset(of: \.tail), 32)
+    XCTAssertEqual(Trace.offset(of: \.tail_present), 48)
+  }
+
   func testNativeResultWithoutGeometryReturnsTypedFailure() {
     XCTAssertEqual(
       GesturePath.decode(.init(code: 5, geometry: nil)), .failure(.invalidDirection))

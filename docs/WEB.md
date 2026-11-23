@@ -187,11 +187,14 @@ mise exec -- node --test bindings/web/tests/*.test.mjs
 mise exec -- node distribution/verify_web_consumer.mjs
 ```
 
-The package builder runs offline with the exact lockfile and matching CLI. It stages the
-portable Rust crates under the browser workspace so Cargo derives the same package
-identities in different checkout paths. It remaps build paths, copies runtime
-notices and emits `.web-build/package` with full source snapshot
-revision, source hashes, compiler/CLI versions, dependency provenance and artifact hashes.
+The package builder runs offline with the exact Cargo lockfile and matching wasm-bindgen CLI.
+It stages the portable Rust crates under the browser workspace so Cargo derives the same
+package identities in different checkout paths. TypeScript checks the public adapter against
+the generated Wasm declarations and emits both `index.js` and `index.d.ts` from
+[`bindings/web/src/index.ts`](https://github.com/naviapps/pointer-gestures/blob/main/bindings/web/src/index.ts).
+The builder remaps build paths,
+copies runtime notices and emits `.web-build/package` with the full source snapshot
+revision, source hashes, tool versions, dependency provenance and artifact hashes.
 The source revision identifies the Git HEAD at build start, or the controller's
 frozen commit identity when Git metadata is omitted. For local uncommitted edits,
 HEAD identifies the baseline; the input hashes identify the actual build bytes. Identical inputs and toolchain should reproduce the
@@ -223,8 +226,9 @@ seven `@ts-expect-error` cases require invalid inputs and unsafe result use to f
 type checking. The fixture never executes. `make check-web-types` runs only the
 pack/install and static declaration checks against an existing generated package.
 Supply a different generated directory as the last argument to
-`node distribution/verify_web_consumer.mjs [--types-only]` when needed, or set `TSC_BIN` to the
-compiler executable. The fixture records the compiler's reported version. These
+`node distribution/verify_web_consumer.mjs [--types-only]` when needed. Set `TSC_BIN` to
+an absolute path to the pinned compiler to override the executable for both build and
+acceptance. The fixture records the compiler's reported version. These
 acceptance tools are developer prerequisites. Ordinary consumers only need the
 generated package and their JS host.
 

@@ -12,6 +12,10 @@ static void CheckOwnedCollection<T>(IReadOnlyList<T> values, T replacement, stri
     }
     Check(EqualityComparer<T>.Default.Equals(values[0], first), description);
 }
+#if SOURCE_CONSUMER
+if (args is ["--abi-layout", var layout])
+    NativeLayoutTests.Verify(layout);
+#endif
 Check(Marshal.SizeOf<PathCommand>() == 56, "Command layout");
 var input = new Direction[] { Direction.Right, Direction.Down };
 var geometry = GestureGeometryPlanner.PlanPattern(input, 96, 64);

@@ -4,8 +4,8 @@ Plan pointer gesture geometry with the shared Rust implementation.
 
 ## Overview
 
-Use `GesturePath/liveTrace(directions:points:cornerRadiusScale:tailPoint:)`
-for a validated live path and `GesturePath/pattern(_:canvasSize:padding:lineWidth:showsArrowhead:cornerRadiusScale:)`
+Use `GesturePath.liveTrace(directions:points:cornerRadiusScale:tailPoint:)`
+for a validated live path and `GesturePath.pattern(_:canvasSize:padding:lineWidth:showsArrowhead:cornerRadiusScale:)`
 for a compact preview. Coordinates use the caller's drawing space. Paths own command
 values copied from owned native geometry. Commands use moves, lines, cubic Bézier curves
 and closing a subpath, with identical planning for native renderers. Captured runs
@@ -28,16 +28,6 @@ provides live overlay and preview views. The optional `PointerGestureRenderingMa
 adapter owns macOS overlay resources and display lifecycle. Hosts own recognition,
 activation, permissions and appearance policy.
 
-## Topics
-
-- ``GesturePath``
-- ``GesturePath/Command``
-- ``GesturePath/commands``
-- ``GestureGeometryError``
-- ``GesturePatternGeometry``
-- ``GesturePatternGeometry/path``
-- ``GesturePatternGeometry/arrowhead``
-
 ## Portable presentation
 
 `GestureOverlayTrace` owns Rust-validated immutable trace data and cached bounds.
@@ -47,12 +37,12 @@ storage while the tail changes. Hidden, empty or invalid inputs release the
 converter's cached geometry and return `nil`. Previously returned traces remain valid.
 The Rust renderer determines whether the directions and endpoints can share the
 previous snapshot's geometry.
-`GestureOverlayTrace/replacingTailPoint(with:)` shares native coordinates and cached
+`GestureOverlayTrace.replacingTailPoint(with:)` shares native coordinates and cached
 bounds with a prior immutable trace, avoiding their repeated copies on tail-only motion.
 `GestureOverlayState` coalesces ordinary movement, immediately publishes direction
 changes and rate-limited large movement, and presents the final pending trace before
 hiding. Pass monotonic nanoseconds to `update` and `tick`; schedule the next tick at
-`GestureOverlayUpdate/deadlineNanoseconds`. Snapshots outlive later calls and the
+`GestureOverlayUpdate.deadlineNanoseconds`. Snapshots outlive later calls and the
 state object. Access one state serially. Rust clamps clock regressions and saturates
 deadlines; it never creates timers or invokes callbacks.
 Presentation updates compare their change flag, trace value and deadline.
@@ -62,28 +52,28 @@ an unchanged trace can therefore clear the next deadline.
 `GestureOverlayTiming` normalizes non-positive, non-finite or unrepresentable
 intervals to 1/60 second and invalid lag distances to 24 points. SwiftUI uses this
 same state and only delivers deadlines and observation. Use
-`GestureOverlayState/configure(timing:nowNanoseconds:)` to change cadence without
+`GestureOverlayState.configure(timing:nowNanoseconds:)` to change cadence without
 resetting visible/pending geometry. New deadlines remain anchored to the last actual
 presentation, including final hiding; already due work is returned immediately.
 
-- ``GestureOverlayTrace``
-- ``GestureOverlayTrace/replacingTailPoint(with:)``
-- ``GestureOverlayTraceConverter``
-- ``GestureOverlayTraceConverter/init()``
-- ``GestureOverlayTraceConverter/convert(_:)``
-- ``GestureOverlayTiming``
-- ``GestureOverlayState``
-- ``GestureOverlayUpdate``
+- `GestureOverlayTrace`
+- `GestureOverlayTrace.replacingTailPoint(with:)`
+- `GestureOverlayTraceConverter`
+- `GestureOverlayTraceConverter.init()`
+- `GestureOverlayTraceConverter.convert(_:)`
+- `GestureOverlayTiming`
+- `GestureOverlayState`
+- `GestureOverlayUpdate`
 
 Viewport filtering uses immutable, Sendable `GestureOverlayTraceFilter` values
 over each trace's Rust-owned bounds. Filters select payloads without UI or window state.
 
-- ``GestureOverlayTraceFilter``
+- `GestureOverlayTraceFilter`
 
 ## Immediate Cancellation
 
 Normal hiding retains pending final geometry briefly. Use
-``GestureOverlayState/clear(nowNanoseconds:)`` for immediate cancellation. It
+`GestureOverlayState.clear(nowNanoseconds:)` for immediate cancellation. It
 uses Rust's shared clear operation and discards both visible and queued geometry
 and scheduled deadlines. Configuration and previously returned snapshots remain
 valid. The AppKit adapter forwards recognition's explicit

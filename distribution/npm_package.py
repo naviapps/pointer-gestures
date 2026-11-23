@@ -26,10 +26,12 @@ def inputs(root):
     paths = [
         root / "Cargo.toml",
         root / "rust-toolchain.toml",
+        root / "mise.toml",
         root / "LICENSE",
         root / "distribution/npm_package.py",
         root / "distribution/source_identity.py",
         root / "bindings/web/package.json",
+        root / "bindings/web/tsconfig.json",
         root / "docs/WEB.md",
     ]
     crates = [root / "crates" / kind for kind in PORTABLE_CRATES]
@@ -122,6 +124,22 @@ def stage_workspace(root, workspace):
     shutil.copytree(web / "src", workspace / "src")
 
 
+def compile_adapter(root, work, stage, compiler):
+    """Emit the public module and declarations against the generated Wasm interface."""
+    source = root / "bindings/web"
+    adapter = work / "adapter"
+    sources = adapter / "src"
+    sources.mkdir(parents=True)
+    shutil.copyfile(source / "src/index.ts", sources / "index.ts")
+    shutil.copyfile(stage / "pointer_gestures_wasm.d.ts", sources / "pointer_gestures_wasm.d.ts")
+    shutil.copyfile(source / "tsconfig.json", adapter / "tsconfig.json")
+    subprocess.run(
+        [compiler, "--project", "tsconfig.json", "--outDir", str(stage)],
+        cwd=adapter,
+        check=True,
+    )
+
+
 def build(root, directory):
     expected_compiler = tomllib.loads((root / "rust-toolchain.toml").read_text())["toolchain"][
         "channel"
@@ -136,6 +154,14 @@ def build(root, directory):
     binding = subprocess.check_output([generator, "--version"], text=True).strip()
     if binding != "wasm-bindgen " + VERSION:
         raise SystemExit("Preinstall wasm-bindgen-cli " + VERSION + " matching the locked crate.")
+    tsc = shutil.which(os.environ.get("TSC_BIN", "tsc"))
+    if tsc is None:
+        raise SystemExit("Install the TypeScript compiler pinned in mise.toml.")
+    tsc = str(Path(tsc).absolute())
+    typescript = subprocess.check_output([tsc, "--version"], text=True).strip()
+    typescript_pin = tomllib.loads((root / "mise.toml").read_text())["tools"]["npm:typescript"]
+    if typescript != "Version " + typescript_pin:
+        raise SystemExit("Use the TypeScript compiler pinned in mise.toml.")
     source_inputs = inputs(root)
     revision, fingerprint = source_identity(root)
     env = dict(os.environ)
@@ -193,8 +219,7 @@ def build(root, directory):
             ],
             check=True,
         )
-        for source in (root / "bindings/web/src").glob("*"):
-            shutil.copyfile(source, stage / source.name)
+        compile_adapter(root, work, stage, tsc)
         shutil.copyfile(root / "bindings/web/package.json", stage / "package.json")
         shutil.copyfile(root / "LICENSE", stage / "LICENSE")
         shutil.copyfile(root / "docs/WEB.md", stage / "README.md")
@@ -240,6 +265,7 @@ def build(root, directory):
             "sourceRevision": revision,
             "compiler": compiler,
             "wasmBindgen": binding,
+            "typescript": typescript,
             "target": "wasm32-unknown-unknown",
             "inputs": source_inputs,
             "dependencies": dependencies,

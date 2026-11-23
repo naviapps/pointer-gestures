@@ -11,12 +11,12 @@ changed display frames rebuild them. Selecting this product does not add AppKit 
 portable rendering product or to recognition-only consumers.
 
 Construction is inactive. Retain a coordinator and explicitly call
-`GestureOverlayCoordinator/configureOverlays(gestureRecognizer:)` after the host
+`GestureOverlayCoordinator.configureOverlays(gestureRecognizer:)` after the host
 has selected its activation and permission policy. The configuration closure receives
 `GestureOverlayDisplay` values; return the host's chosen styling and cadence.
 The adapter reads no preferences and requests no permissions.
 
-Call `GestureOverlayCoordinator/removeOverlays()` to invalidate queued rebuilds,
+Call `GestureOverlayCoordinator.removeOverlays()` to invalidate queued rebuilds,
 cancel trace delivery and close windows synchronously. Reconfiguration replaces the
 old subscription. Release performs the same teardown. Resource callbacks may remove
 or replace the active overlays without an older build reclaiming ownership.
@@ -60,13 +60,6 @@ Windows/.NET uses the same Rust geometry, trace filtering and presentation state
 Hosts may draw into their own controls or explicitly activate the optional native
 Windows overlay. This macOS product is independent of that resource adapter.
 
-## Topics
-
-- ``GestureOverlayCoordinator``
-- ``GestureOverlayDisplay``
-- ``GestureOverlayWindowTraceSource``
-- ``GestureOverlayWindowResource``
-
 ## Immediate Cancellation
 
 Normal hiding retains pending final geometry briefly. Immediate cancellation
@@ -74,7 +67,7 @@ uses Rust's shared clear operation and discards both visible and queued geometry
 and scheduled deadlines. Configuration and previously returned snapshots remain
 valid. The macOS adapter forwards recognition's explicit
 `discardsPendingPresentation` intent; custom adapters must preserve it too.
-Honor `GestureOverlayWindowTraceSource/initiallyDiscardsPendingPresentation`
+Honor `GestureOverlayWindowTraceSource.initiallyDiscardsPendingPresentation`
 when binding a resource, and the Boolean delivered by its `observe` closure on
 later updates. With a SwiftUI model, call `GestureOverlayModel.clear()` for a
 discard and `GestureOverlayModel.update(_:)` for ordinary trace or hide updates.

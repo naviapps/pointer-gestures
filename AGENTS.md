@@ -5,7 +5,7 @@ adapters, artifact policy and acceptance fixtures. SDK Tooling owns shared build
 and verification mechanisms. Hosts own permissions onboarding, application commands
 and persistence. The optional macOS and Windows rendering adapters own overlay
 resources; hosts explicitly activate them and supply appearance policy.
-Read README.md and the affected Sources/*/*.docc catalog before API changes.
+Read README.md and the affected Swift guide in docs/ before API changes.
 
 Use Git on main. Keep unfinished edits in the working tree; publish coherent,
 verified main units only. Preserve consumer pins. Rewrite history only for an
@@ -29,14 +29,15 @@ before release. Native input adapters own recovery of consumed input when stoppi
 destroying; explicit stop makes failures observable. Keep independent
 dynamic native binaries with exactly their declared exports and retained runtime notices.
 Rebuild affected frameworks and provenance after native/input changes. Swift consumers
-need neither Rust nor Python. Maintain SDK APIs, README, DocC and consumers together;
-preserve dated release evidence.
+need neither Rust nor Python. Maintain SDK APIs, guides and consumers together.
+Preserve dated release evidence.
 
 Run `make check` for lint, Rust and Swift tests, standalone Swift consumers, C ABI
 fixtures and managed compilation. Use the distribution setup in README.md for
-receipt, DocC, .NET package and Web checks. Use injected effects and owned native fixtures. Compilation,
-local tests, actual OS effects and exact-source CI are separate evidence. Do not
-repeat unchanged successful checks or add tests that freeze private helper spelling.
+receipt, Rust documentation, .NET package and Web checks. Use injected effects and
+owned native fixtures. Compilation, local tests, actual OS effects and exact-source
+CI are separate evidence. Do not repeat unchanged successful checks or add tests that
+freeze private helper spelling.
 
 ## Test ownership
 

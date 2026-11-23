@@ -56,13 +56,13 @@ if let trace = GestureOverlayTrace(
 
 `GestureOverlayTrace.init(directions:points:tailPoint:)` fails for empty
 directions, mismatched point counts, or non-finite coordinates. Use `nil` with
-`GestureOverlayModel/update(_:)` to hide the overlay.
+`GestureOverlayModel.update(_:)` to hide the overlay.
 
 The model coalesces ordinary geometry updates to the configured animation
 cadence. Direction changes and large pointer movement remain responsive, and a
 hide preserves the final visible trace briefly enough to render the last update.
 A delayed main-actor timer uses the original deadline without restarting the wait.
-Use `GestureOverlayModel/configure(_:)` to update host style and cadence in place.
+Use `GestureOverlayModel.configure(_:)` to update host style and cadence in place.
 The model preserves current and pending final geometry. Configuration changes and
 updates from a trace observation callback are applied in order after the current
 publication, including a callback that hides the trace or starts another gesture.
@@ -115,50 +115,10 @@ events, recognition policy, permissions, persistence and product-specific behavi
 The optional `PointerGestureRenderingMacOS` product owns macOS overlay windows,
 trace fanout and display rebuilds; SwiftUI-only consumers can supply their own resources.
 
-## Topics
-
-### Live Overlay
-
-- ``GestureOverlayModel``
-- ``GestureOverlayModel/init(trace:configuration:)``
-- ``GestureOverlayModel/trace``
-- ``GestureOverlayModel/configuration``
-- ``GestureOverlayModel/update(_:)``
-- ``GestureOverlayModel/clear()``
-- ``GestureOverlayModel/configure(_:)``
-- ``GestureOverlayView``
-- ``GestureOverlayView/init(model:coordinateMapping:)``
-- ``GestureOverlayCoordinateMapping``
-- ``GestureOverlayCoordinateMapping/init(windowOrigin:displayCoordinateMaxY:)``
-
-### Live Overlay Configuration
-
-- ``GestureOverlayConfiguration``
-- ``GestureOverlayConfiguration/liveOverlay``
-- ``GestureOverlayConfiguration/init(minimumAnimationInterval:maximumPointLagDistance:strokeStyle:turnStyle:)``
-- ``GestureTurnStyle``
-- ``GestureTurnStyle/rounded``
-- ``GestureTurnStyle/rightAngle``
-
-### Pattern Preview
-
-- ``GesturePatternView``
-- ``GesturePatternView/init(pattern:configuration:)``
-- ``GesturePatternConfiguration``
-- ``GesturePatternConfiguration/patternPreview``
-- ``GesturePatternConfiguration/init(frameSize:strokeStyle:showsArrowhead:padding:turnStyle:)``
-
-### Shared Styling
-
-- ``GestureStrokeStyle``
-- ``GestureStrokeStyle/liveOverlay``
-- ``GestureStrokeStyle/patternPreview``
-- ``GestureStrokeStyle/init(color:lineWidth:)``
-
 ## Immediate Cancellation
 
 Normal hiding through `update(nil)` retains pending final geometry briefly. Use
-``GestureOverlayModel/clear()`` for immediate cancellation. It
+`GestureOverlayModel.clear()` for immediate cancellation. It
 uses Rust's shared clear operation and discards both visible and queued geometry
 and scheduled deadlines. Configuration and previously returned snapshots remain
 valid. The AppKit adapter forwards recognition's explicit

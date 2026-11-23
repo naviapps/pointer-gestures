@@ -8,7 +8,7 @@ PointerGestureRecognitionMacOS provides the live macOS adapter for `PointerGestu
 `GestureEventTap` when a macOS app needs to capture pointer-button drag gestures with a Core
 Graphics session event tap. It defaults to the secondary button and can be configured for primary,
 middle, or auxiliary pointer buttons. Passing an empty captured-button set captures no input and
-`GestureEventTap/start(handler:)` returns `false`.
+`GestureEventTap.start(handler:)` returns `false`.
 
 When a recognizer uses a non-default recognition button, create `GestureEventTap` with a
 `capturedButtons` set that includes that same button.
@@ -68,7 +68,7 @@ let coreGraphicsPoint = point.cgPoint
 
 PointerGestureRecognitionMacOS owns the live Core Graphics event-tap adapter for pointer-button
 drag input, Escape-key cancellation, modifier mapping, and pointer-button replay adaptation. Use
-`GestureEventTap/replay(_:)` to handle click, drag, and release replay
+`GestureEventTap.replay(_:)` to handle click, drag, and release replay
 requests emitted by the recognizer. `GestureReplayRequest.dragStart(button:points:)`
 restores a consumed drag start without posting a release; a later release request finishes it.
 A click replay posts button-down and button-up events before returning. A drag replay posts down, move, and up events; empty drag requests are ignored and
@@ -78,24 +78,24 @@ Recovery retains the original press's click count, so a captured double or tripl
 become a single click. Replayed down retains the original press's native modifier flags;
 movement and up retain the latest captured pointer event's flags. This preserves modified clicks
 and drags when a key changes during capture. Deliver replay requests directly from the replay callback,
-or call `GestureEventTap/prepareReplay(_:)` in that callback and enqueue the returned operation
+or call `GestureEventTap.prepareReplay(_:)` in that callback and enqueue the returned operation
 for ordered, deferred delivery. Preparing posts no input and retains its native events independently
 of later input or tap teardown. Deliver each operation once; canceling unrelated host work must not
 discard consumed-input recovery. Completed input and stopped taps discard their capture metadata.
 
 When a session expires during the callback for the same captured button's physical release,
 the replay can already contain the release. A complete terminal replay delivered by
-`GestureEventTap/replay(_:)` can replace that original event. To preserve the same behavior
-with a host queue, use `GestureEventTap/enqueueReplay(_:accepting:)`. Return `true` only after
+`GestureEventTap.replay(_:)` can replace that original event. To preserve the same behavior
+with a host queue, use `GestureEventTap.enqueueReplay(_:accepting:)`. Return `true` only after
 the queue owns the entire operation for delivery exactly once, in request order, even after
 tap shutdown or host teardown. Return `false` without keeping or executing a refused operation.
 Refusal preserves the original press metadata, so a host can immediately fall back to
-`GestureEventTap/replay(_:)` in the same callback.
+`GestureEventTap.replay(_:)` in the same callback.
 Ordinary preparation does not replace the physical release, and unrelated or reentrant input
 cannot claim the release on behalf of another press.
 
 For a queue that defers delivery of a restored drag start, use
-``GestureEventTap/enqueueReplayFollowingThrough(_:inOrder:)``. When called from the exact live
+`GestureEventTap.enqueueReplayFollowingThrough(_:inOrder:)`. When called from the exact live
 movement callback of a consumed press, it puts that drag start and its subsequent same-button
 events in the same retained FIFO. One continued movement can be pending at a time. The adapter
 always queues the release. A new same-button press arriving before that release posts is forwarded
@@ -105,7 +105,7 @@ even across teardown. Stopping or losing the tap drops an incomplete start that 
 If its Down already posted, the queue receives a fallback Up. A pair whose physical Up was
 already accepted remains deliverable. Physical input cannot be intercepted while a tap is disabled.
 
-`GestureEventTap/stop(recoveringInput:)` disconnects the native tap before invoking recovery,
+`GestureEventTap.stop(recoveringInput:)` disconnects the native tap before invoking recovery,
 keeping the stopped capture metadata available only until the closure returns. This prevents
 a queued replayed press from being lost when its own capture port is invalidated.
 Reentrant input from a restarted tap uses its new capture metadata while stopped-input recovery
@@ -122,22 +122,9 @@ persistence, telemetry, analytics, and product behavior in the host app. This ta
 supported `CGEvent` values into `PointerGestureRecognition.GestureInputEvent` values, applies the
 recognizer's event-disposition decision, and replays concrete Core Graphics events requested by
 `GestureReplayRequest` values. It reports event-tap creation failure through
-`GestureEventTap/start(handler:)`. Host applications are responsible for Accessibility
+`GestureEventTap.start(handler:)`. Host applications are responsible for Accessibility
 permission onboarding and recovery UI.
 The `GesturePoint.init(_:)` and `GesturePoint.cgPoint`
 bridges preserve coordinates and expose the core `GesturePoint.isFinite` check
 for non-finite input. They do not flip coordinate axes; platform-specific
 screen or view coordinate transforms belong in the host app.
-
-## Topics
-
-### Event Tap
-
-- ``GestureEventTap``
-- ``GestureEventTap/init(capturedButtons:)``
-- ``GestureEventTap/start(handler:)``
-- ``GestureEventTap/stop(recoveringInput:)``
-- ``GestureEventTap/replay(_:)``
-- ``GestureEventTap/enqueueReplay(_:accepting:)``
-- ``GestureEventTap/enqueueReplayFollowingThrough(_:inOrder:)``
-- ``GestureEventTap/prepareReplay(_:)``

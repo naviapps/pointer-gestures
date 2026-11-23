@@ -36,6 +36,9 @@ static void CheckInvalidTuning(Action validate, string field)
 }
 
 #if SOURCE_CONSUMER
+if (args is ["--abi-layout", var layout])
+    NativeLayoutTests.Verify(layout);
+
 // Exercise native-to-public error translation without installing OS input hooks.
 foreach (var (kind, failure) in new (uint, WindowsRecognitionFailure)[] {
     (2, WindowsRecognitionFailure.AlreadyRunning), (3, WindowsRecognitionFailure.System),

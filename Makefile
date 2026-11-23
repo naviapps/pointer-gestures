@@ -26,7 +26,6 @@ test-distribution-tools:
 
 check-docs:
 	RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked --offline
-	$(SDK_TOOLING) docs
 
 check-native:
 	$(SDK_TOOLING) xcframework --verify

@@ -16,6 +16,7 @@ from sdk_tooling.adapters import load, support_inputs
 from sdk_tooling.dotnet import pinned_sdk_version
 from sdk_tooling.native_plan import ffi_product
 
+from .abi_layout import report_layout
 from .nuget import NuGetSDK
 from .package_layout import KINDS, PackageLayout
 
@@ -243,19 +244,7 @@ class WindowsSDK:
         work = self.native / ("test-" + RID)
         work.mkdir(parents=True, exist_ok=True)
         program = work / "ownership.exe"
-        self.run(
-            [
-                tools / "cl.exe",
-                "/nologo",
-                "/std:c11",
-                "/W4",
-                "/WX",
-                "/c",
-                "/I" + str(self.ffi / "include"),
-                self.ffi / "tests/c/layout.c",
-                "/Fo" + str(work / "layout.obj"),
-            ]
-        )
+        report_layout(self.ffi, work, compiler=[tools / "cl.exe"], env=self.env, windows=True)
         self.run(
             [
                 tools / "cl.exe",

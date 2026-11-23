@@ -30,7 +30,7 @@ The core target does not depend on AppKit, Core Graphics, or live input capture.
 event sources to `GestureRecognizer` and provide recognition-context policy plus callbacks through
 `GestureRecognizerConfiguration`. Trace rendering, Accessibility permission presentation,
 persistence, telemetry, and command execution stay outside this target.
-Use `GestureInputEvent/Kind` to distinguish pointer-button down, move, and up input events.
+Use `GestureInputEvent.Kind` to distinguish pointer-button down, move, and up input events.
 
 Use `GesturePatternMatcher` to map direction patterns to app-owned match values, then create a
 `GestureRecognizer` with an event source and configuration.
@@ -66,18 +66,18 @@ pattern. Host apps validate settings-level conflicts before building a matcher.
 Use `GestureRecognizerConfiguration` to provide policy callbacks, replay handling, match handling,
 and tuning. Keep the returned `GestureObservationToken` while status or trace observation should
 remain active.
-Use `GestureRecognizer/observeTrace(_:)` for live overlay feedback; after a trace becomes visible,
+Use `GestureRecognizer.observeTrace(_:)` for live overlay feedback; after a trace becomes visible,
 tail-point and hidden-state updates are delivered during input handling so hosts can render fast
 gestures without an extra main-actor turn. A hidden trace's
-`GestureRecognizerState/Trace/discardsPendingPresentation` requests immediate
+`GestureRecognizerState.Trace/discardsPendingPresentation` requests immediate
 cancellation of visible and queued rendering; normal completion preserves final geometry.
-Use `GesturePatternMatcher/validationError(for:)` for nonmutating validation.
+Use `GesturePatternMatcher.validationError(for:)` for nonmutating validation.
 The repeated-direction error indexes the zero-based second run; length errors have no index.
 
 ### Editing Registrations and Host Identity
 
-`GesturePatternMatcher/remove(pattern:)` removes one exact registration;
-`GesturePatternMatcher/removeAll()` releases this matcher's registrations and
+`GesturePatternMatcher.remove(pattern:)` removes one exact registration;
+`GesturePatternMatcher.removeAll()` releases this matcher's registrations and
 commands. Copies and active sessions retain their captured values. Registration
 slots are reused during repeated edits. An absent removal returns `nil`.
 
@@ -99,13 +99,13 @@ drag sample, a finite release can finish a recording that reaches the start
 distance in a cardinal direction only at that release. Without prior motion, a
 release does not start recording; normal matching still starts on motion.
 
-`GestureModifierFlags/init(rawValue:)` preserves supplied package bits, including unknown
+`GestureModifierFlags.init(rawValue:)` preserves supplied package bits, including unknown
 bits; it does not accept platform modifier masks as equivalent values. Convert platform flags
 in the event-source adapter and normalize host settings at the host boundary.
 
 Keep observation tokens alive while observation is needed. Status and trace observation emit
 an initial snapshot. Cancellation or token release removes the observer. Once
-`GestureObservationToken/cancel()` returns on the main actor, no further callback
+`GestureObservationToken.cancel()` returns on the main actor, no further callback
 for that subscription starts, even within the current notification. A callback
 already running may finish. A replacement subscription receives its own initial
 snapshot and no notifications queued for the removed registration.
@@ -135,7 +135,7 @@ Host apps own the choice of limits, settings, and recovery UI.
 
 ## Session Reports and Direction Budget
 
-Read `GestureRecognizerState/lastSessionReport` for a copied, coordinate-free
+Read `GestureRecognizerState.lastSessionReport` for a copied, coordinate-free
 `GestureSessionReport`. `GestureSessionOutcome` distinguishes a match, recording,
 ordinary click, failed prefix, cancellation, stop, replacement, each deadline,
 malformed release and budget recovery. Reports measure from the original press and
@@ -152,7 +152,7 @@ before checking the new press's host policy. The old session reports `superseded
 or its deadline outcome if it already expired.
 If recovery handles a newer press or restarts the source, the earlier press
 passes through before the recognizer asks for its host context.
-`GestureRecognizerTuning/maximumDirectionCount` defaults to 64 and is validated in
+`GestureRecognizerTuning.maximumDirectionCount` defaults to 64 and is validated in
 1...4096. Each press captures the limit. Attempting another direction recovers input
 and hides the trace without matching. Lowering tuning affects subsequent sessions,
 not the budget already captured by current input. The raw point limit remains
@@ -174,161 +174,15 @@ The recognizer turns platform-neutral input into a match through a small fixed p
 
 PointerGestureRecognition owns direction recognition, matching, recognizer state, trace observation,
 event-disposition modeling, event-source start retry behavior, and platform-neutral event-source
-contracts. Event-source implementations expose `GestureEventSource/start(handler:)` and
-`GestureEventSource/stop(recoveringInput:)` as the live-input lifecycle hooks consumed by the recognizer.
+contracts. Event-source implementations expose `GestureEventSource.start(handler:)` and
+`GestureEventSource.stop(recoveringInput:)` as the live-input lifecycle hooks consumed by the recognizer.
 Stop disconnects capture before invoking recovery exactly once, retaining the metadata that
 recovery needs until it returns. A restart from recovery begins a new capture that the old
 stop leaves running. The no-argument `stop()` convenience supplies empty recovery.
 They apply the returned `GestureEventDisposition` to the original platform event:
-`GestureEventDisposition/consume` suppresses it, while
-`GestureEventDisposition/passThrough` leaves it in the platform event stream.
+`GestureEventDisposition.consume` suppresses it, while
+`GestureEventDisposition.passThrough` leaves it in the platform event stream.
 
 PointerGestureRecognition does not own command catalogs, command execution, overlay UI, Accessibility
 permission presentation, privacy disclosures, persistence, telemetry, analytics, non-macOS
 event-source adapters, or diagonal gesture directions.
-
-## Topics
-
-### Recognizer
-
-- ``GestureRecognizer``
-- ``GestureRecognizer/init(eventSource:configuration:)``
-- ``GestureRecognizer/isRecordingModeEnabled``
-- ``GestureRecognizer/start()``
-- ``GestureRecognizer/stop()``
-- ``GestureRecognizer/retryStartNow()``
-- ``GestureRecognizer/cancelActiveGesture()``
-- ``GestureRecognizer/snapshot``
-- ``GestureRecognizer/observe(_:)``
-- ``GestureRecognizer/observeTrace(_:)``
-- ``GestureRecognizerConfiguration``
-- ``GestureRecognizerConfiguration/init(makeMatcher:onReplayRequested:onMatch:recognitionButton:recognitionContext:isRecognitionEnabled:passesThroughEmptyMatcher:areModifiersSatisfied:tuning:)``
-- ``GestureRecognitionContext``
-- ``GestureRecognitionContext/init(identifier:)``
-- ``GestureRecognitionContext/identifier``
-- ``GestureRecognizerFailure``
-- ``GestureRecognizerFailure/eventSourceStartFailed``
-- ``GestureRecognizerFailure/recognitionDisabled``
-- ``GestureRecognizerFailure/modifiersNotSatisfied``
-- ``GestureRecognizerFailure/gestureSessionExpired``
-
-### Matching
-
-- ``GesturePatternMatcher``
-- ``GesturePatternError``
-- ``GesturePatternMatcher/init()``
-- ``GesturePatternMatcher/isEmpty``
-- ``GesturePatternMatcher/validationError(for:)``
-- ``GesturePatternMatcher/register(pattern:match:)``
-- ``GesturePatternMatcher/remove(pattern:)``
-- ``GesturePatternMatcher/removeAll()``
-- ``GesturePatternMatcher/match(pattern:)``
-- ``GestureDirection``
-- ``GestureDirection/up``
-- ``GestureDirection/down``
-- ``GestureDirection/left``
-- ``GestureDirection/right``
-
-### Input and Geometry
-
-- ``GestureInputEvent``
-- ``GestureInputEvent/init(kind:location:modifiers:)``
-- ``GestureInputEvent/Kind``
-- ``GestureInputEvent/Kind/buttonDown(_:)``
-- ``GestureInputEvent/Kind/buttonMoved(_:)``
-- ``GestureInputEvent/Kind/buttonUp(_:)``
-- ``GestureInputEvent/Kind/cancel``
-- ``GestureInputEvent/kind``
-- ``GestureInputEvent/location``
-- ``GestureInputEvent/modifiers``
-- ``GestureEventDisposition``
-- ``GestureEventDisposition/consume``
-- ``GestureEventDisposition/passThrough``
-- ``GestureEventDisposition/consumesOriginalEvent``
-- ``GestureReplayRequest``
-- ``GestureReplayRequest/click(button:at:)``
-- ``GestureReplayRequest/drag(button:points:)``
-- ``GestureReplayRequest/dragStart(button:points:)``
-- ``GestureReplayRequest/release(button:at:)``
-- ``PointerButton``
-- ``PointerButton/primary``
-- ``PointerButton/secondary``
-- ``PointerButton/middle``
-- ``PointerButton/init(auxiliaryButtonID:)``
-- ``PointerButton/auxiliaryButtonID``
-- ``GesturePoint``
-- ``GesturePoint/init(x:y:)``
-- ``GesturePoint/x``
-- ``GesturePoint/y``
-- ``GesturePoint/zero``
-- ``GestureModifierFlags``
-- ``GestureModifierFlags/init(rawValue:)``
-- ``GestureModifierFlags/rawValue``
-- ``GestureModifierFlags/command``
-- ``GestureModifierFlags/option``
-- ``GestureModifierFlags/control``
-- ``GestureModifierFlags/shift``
-
-### Policy and Tuning
-
-- ``GestureRecognizerTuning``
-- ``GestureRecognizerTuning/standard``
-- ``GestureRecognizerTuning/validated(minimumGestureStartAxisDistance:minimumDirectionChangeAxisDistance:maximumGestureSessionDuration:maximumGestureIdleDuration:maximumRawPointCount:maximumDirectionCount:eventSourceStartRetryDelays:)``
-- ``GestureRecognizerTuning/ValidationError``
-- ``GestureRecognizerTuning/minimumGestureStartAxisDistance``
-- ``GestureRecognizerTuning/minimumDirectionChangeAxisDistance``
-- ``GestureRecognizerTuning/maximumGestureSessionDuration``
-- ``GestureRecognizerTuning/maximumGestureIdleDuration``
-- ``GestureRecognizerTuning/maximumRawPointCount``
-- ``GestureRecognizerTuning/maximumDirectionCount``
-- ``GestureRecognizerTuning/eventSourceStartRetryDelays``
-- ``GestureRecognizer/updateTuning(_:)``
-
-### Observation
-
-- ``GestureRecognizerObserving``
-- ``GestureRecognizerObserving/snapshot``
-- ``GestureRecognizerObserving/observe(_:)``
-- ``GestureRecognizerObserving/observeStatus(_:)``
-- ``GestureRecognizerObserving/observeTrace(_:)``
-- ``GestureRecognizerState``
-- ``GestureRecognizerState/init(status:trace:lastSessionReport:)``
-- ``GestureRecognizerState/status``
-- ``GestureRecognizerState/trace``
-- ``GestureRecognizerState/lastSessionReport``
-- ``GestureRecognizerState/Status``
-- ``GestureRecognizerState/Status/init(lifecycle:isCapturingGesture:isRecordingModeEnabled:lastRecordedDirections:lastFailure:)``
-- ``GestureRecognizerState/Status/lifecycle``
-- ``GestureRecognizerState/Status/isCapturingGesture``
-- ``GestureRecognizerState/Status/isRecordingModeEnabled``
-- ``GestureRecognizerState/Status/lastRecordedDirections``
-- ``GestureRecognizerState/Status/lastFailure``
-- ``GestureRecognizerState/Status/Lifecycle``
-- ``GestureRecognizerState/Status/Lifecycle/idle``
-- ``GestureRecognizerState/Status/Lifecycle/starting``
-- ``GestureRecognizerState/Status/Lifecycle/ready``
-- ``GestureRecognizerState/Status/Lifecycle/retrying``
-- ``GestureRecognizerState/Status/Lifecycle/failed``
-- ``GestureRecognizerState/Trace``
-- ``GestureRecognizerState/Trace/init(isVisible:discardsPendingPresentation:rawPoints:directions:directionEndpoints:tailPoint:)``
-- ``GestureRecognizerState/Trace/isVisible``
-- ``GestureRecognizerState/Trace/discardsPendingPresentation``
-- ``GestureRecognizerState/Trace/rawPoints``
-- ``GestureRecognizerState/Trace/directions``
-- ``GestureRecognizerState/Trace/directionEndpoints``
-- ``GestureRecognizerState/Trace/tailPoint``
-- ``GestureObservationToken``
-- ``GestureObservationToken/init(onCancel:)``
-- ``GestureObservationToken/cancel()``
-
-### Session Reports
-
-- ``GestureSessionReport``
-- ``GestureSessionOutcome``
-
-### Event Source
-
-- ``GestureEventSource``
-- ``GestureEventSource/start(handler:)``
-- ``GestureEventSource/stop()``
-- ``GestureEventSource/stop(recoveringInput:)``

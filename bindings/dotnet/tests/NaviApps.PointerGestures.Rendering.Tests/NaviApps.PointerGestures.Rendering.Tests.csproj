@@ -4,6 +4,7 @@
     <DefineConstants>$(DefineConstants);SOURCE_CONSUMER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../AbiLayout.cs" Link="AbiLayout.cs" />
     <Compile Include="../../../../fixtures/consumers/dotnet/Rendering.cs" Link="PackageConsumer/Rendering.cs" />
     <ProjectReference Include="../../src/NaviApps.PointerGestures.Rendering/NaviApps.PointerGestures.Rendering.csproj" />
   </ItemGroup>

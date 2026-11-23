@@ -10,11 +10,11 @@ persistence and style. Optional macOS and Windows adapters own overlay resources
 - Installation and consumer examples: [Swift](#swift-installation),
   [Rust](#rust-installation), [C on macOS](#c-installation-on-macos),
   [browser](https://github.com/naviapps/pointer-gestures/blob/main/docs/WEB.md) and [.NET](#net-usage).
-- Swift API guides: [recognition](https://github.com/naviapps/pointer-gestures/blob/main/Sources/PointerGestureRecognition/PointerGestureRecognition.docc/PointerGestureRecognition.md),
-  [macOS input](https://github.com/naviapps/pointer-gestures/blob/main/Sources/PointerGestureRecognitionMacOS/PointerGestureRecognitionMacOS.docc/PointerGestureRecognitionMacOS.md),
-  [portable rendering](https://github.com/naviapps/pointer-gestures/blob/main/Sources/PointerGestureRendering/PointerGestureRendering.docc/PointerGestureRendering.md),
-  [SwiftUI](https://github.com/naviapps/pointer-gestures/blob/main/Sources/PointerGestureRenderingSwiftUI/PointerGestureRenderingSwiftUI.docc/PointerGestureRenderingSwiftUI.md)
-  and [macOS overlays](https://github.com/naviapps/pointer-gestures/blob/main/Sources/PointerGestureRenderingMacOS/PointerGestureRenderingMacOS.docc/PointerGestureRenderingMacOS.md).
+- Swift API guides: [recognition](https://github.com/naviapps/pointer-gestures/blob/main/docs/swift-recognition.md),
+  [macOS input](https://github.com/naviapps/pointer-gestures/blob/main/docs/swift-macos-input.md),
+  [portable rendering](https://github.com/naviapps/pointer-gestures/blob/main/docs/swift-rendering.md),
+  [SwiftUI](https://github.com/naviapps/pointer-gestures/blob/main/docs/swiftui.md)
+  and [macOS overlays](https://github.com/naviapps/pointer-gestures/blob/main/docs/swift-macos-overlays.md).
 - SDK work: [development and acceptance](#development-and-acceptance),
   [browser builds](https://github.com/naviapps/pointer-gestures/blob/main/docs/WEB.md#build-and-verify) and [Windows development](https://github.com/naviapps/pointer-gestures/blob/main/docs/WINDOWS.md).
 
@@ -158,7 +158,7 @@ end of that lifetime. Construction is inactive. The adapter shares one recogniti
 subscription across primary-first display snapshots, filters through Rust, and
 owns transparent, nonactivating, click-through windows. Removal synchronously
 cancels subscriptions before closing resources; release also tears down the adapter.
-See the [macOS overlay guide](https://github.com/naviapps/pointer-gestures/blob/main/Sources/PointerGestureRenderingMacOS/PointerGestureRenderingMacOS.docc/PointerGestureRenderingMacOS.md)
+See the [macOS overlay guide](https://github.com/naviapps/pointer-gestures/blob/main/docs/swift-macos-overlays.md)
 for configuration changes, injected resources and native validation.
 
 ## Rust installation
@@ -489,7 +489,7 @@ When native sources change, run `mise exec -- make native` to rebuild the
 two macOS frameworks declared in [`native.toml`](native.toml) and record their
 sources, toolchain, dependency provenance and hashes. `make check-distribution`
 checks the existing native receipts, the distribution fixtures, a Swift release
-build and API documentation.
+build and Rust API documentation.
 `make check-dotnet` builds host-native Rust libraries and runs the managed
 fixtures and README examples.
 Run `mise run sdk-tooling -- xcframework --product recognition` to select one framework.
@@ -498,7 +498,7 @@ lists the Windows build, inspection, C and package consumer checks.
 Windows input and drawing probes require explicit opt-in in an owned isolated desktop.
 Local builds, actual native fixtures and exact-source CI are distinct evidence.
 For documentation-only edits, `mise exec -- make check-docs` checks Rust API
-documentation and all five Swift DocC catalogs without native UI opt-ins.
+documentation.
 
 Each macOS framework contains the original notice bodies verbatim in
 `Resources/ThirdPartyNotices.txt`. Original notices and Rust runtime provenance

@@ -12,6 +12,7 @@ from pathlib import Path
 
 from sdk_tooling.adapters import load
 
+from distribution.abi_layout import report_layout
 from distribution.package_layout import KINDS, PackageLayout
 
 
@@ -61,7 +62,7 @@ def main(root=None):
         search = "DYLD_LIBRARY_PATH" if sys.platform == "darwin" else "LD_LIBRARY_PATH"
         env[search] = str(library_dir) + os.pathsep + env.get(search, "")
 
-    def execute(project):
+    def execute(project, *arguments):
         load("dotnet").verify_managed(
             dotnet,
             project,
@@ -89,7 +90,10 @@ def main(root=None):
                 name = sdk.package.replace("-", "_") + ".dll"
                 shutil.copyfile(library_dir / name, output / name)
         subprocess.run(
-            [dotnet, output / (project.stem + ".dll")], cwd=project.parent, env=env, check=True
+            [dotnet, output / (project.stem + ".dll"), *arguments],
+            cwd=project.parent,
+            env=env,
+            check=True,
         )
 
     tests = ROOT / "bindings/dotnet"
@@ -107,7 +111,13 @@ def main(root=None):
         check=True,
     )
     for sdk in layouts:
-        execute(sdk.tests)
+        if sys.platform == "win32":
+            execute(sdk.tests)
+        else:
+            compiler = ["xcrun", "clang"] if sys.platform == "darwin" else ["cc"]
+            with tempfile.TemporaryDirectory(prefix="abi-layout-", dir=native) as work:
+                layout = report_layout(sdk.ffi, Path(work), compiler=compiler, env=env)
+                execute(sdk.tests, "--abi-layout", layout)
     examples = re.findall(r"```csharp\n(.*?)\n```", (ROOT / "README.md").read_text(), re.S)
     if not examples:
         raise SystemExit("README.md must contain a runnable C# example.")

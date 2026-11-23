@@ -8,10 +8,3 @@ executables = [
   "RenderingMacOSConsumer",
 ]
 verify_dependencies = true
-
-[docs]
-catalogs = ["Sources/*/*.docc"]
-output = ".native-build/docs"
-graph_arguments = ["--skip-synthesized-members"]
-require_declaration_docs = true
-retain_archives = true

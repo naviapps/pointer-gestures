@@ -16,7 +16,12 @@ async function compileOnly(bytes: ArrayBuffer, module: WebAssembly.Module): Prom
   await init(new URL("https://example.invalid/owned.wasm"));
   await init(new Uint8Array(bytes));
   initSync(module);
-  const session = new GestureSession({ recording: true, totalDurationMs: 0 });
+  // Consumers can substitute this public session shape without a Wasm handle.
+  const implementation: Pick<GestureSession, keyof GestureSession> = new GestureSession({
+    recording: true,
+    totalDurationMs: 0,
+  });
+  const session: GestureSession = implementation;
   const pattern: readonly Direction[] = ["down", "right"];
   session.register(pattern, 42);
   const tuning: GestureTuning = {
