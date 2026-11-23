@@ -163,15 +163,22 @@ its root; the generated consumer package does not contain build tools or manifes
 Prepare the pinned tools using the [development setup](../README.md#development-and-acceptance)
 and use the pinned SDK Tooling CLI from mise.
 
-Use the repository's pinned Rust compiler and preinstall `wasm32-unknown-unknown`,
-`wasm-bindgen-cli` 0.2.104 and the Node.js and TypeScript versions in `mise.toml`.
-Install the CLI in a task-owned tool directory when it is not already available.
-The macOS distribution job in SDK Tooling downloads the official ARM64 archive
-and checks its SHA-256.
-Fetch the separate locked dependencies once when network access is intended:
+On macOS ARM64, install the Wasm target and fetch the separate locked dependencies
+once when network access is intended:
 
 ```sh
+mise exec -- rustup target add wasm32-unknown-unknown
 mise exec -- cargo fetch --manifest-path bindings/web/rust/Cargo.toml --locked
+mise run check-web-distribution
+```
+
+The hosted macOS distribution job runs this task with mise 2026.11.12.
+The task selects the official ARM64 `wasm-bindgen` 0.2.104 archive with a
+pinned SHA-256 and installs it only when needed.
+For individual commands, prepare the matching `wasm-bindgen-cli` and the pinned
+Rust, Node.js and TypeScript tools yourself:
+
+```sh
 mise run sdk-tooling -- python -m distribution.npm_package
 mise run sdk-tooling -- python -m distribution.npm_package --verify
 mise exec -- cargo test --manifest-path bindings/web/rust/Cargo.toml --locked --offline
