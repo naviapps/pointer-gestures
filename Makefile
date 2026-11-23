@@ -4,7 +4,7 @@ SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-a
 ARTIFACTS := $(CURDIR)/Artifacts
 
 .DEFAULT_GOAL := check
-.PHONY: check check-source test-managed test-rust check-distribution test-distribution-tools check-docs check-native test-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release format lint test
+.PHONY: check check-source test-managed test-rust check-distribution test-distribution-tools check-docs check-native test-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release clean format lint test
 
 check: check-source test test-consumer
 
@@ -79,6 +79,19 @@ build:
 
 build-release:
 	swift build -c release $(SWIFT_STRICT_FLAGS)
+
+clean:
+	$(SDK_TOOLING) clean .build target .native-build fixtures/consumers/swift/.build \
+	  bindings/web/rust/target .web-build fixtures/acceptance/browser/node_modules \
+	  bindings/dotnet/examples/windows/bin bindings/dotnet/examples/windows/obj \
+	  bindings/dotnet/src/NaviApps.PointerGestures.Recognition/bin \
+	  bindings/dotnet/src/NaviApps.PointerGestures.Recognition/obj \
+	  bindings/dotnet/src/NaviApps.PointerGestures.Rendering/bin \
+	  bindings/dotnet/src/NaviApps.PointerGestures.Rendering/obj \
+	  bindings/dotnet/tests/NaviApps.PointerGestures.Recognition.Tests/bin \
+	  bindings/dotnet/tests/NaviApps.PointerGestures.Recognition.Tests/obj \
+	  bindings/dotnet/tests/NaviApps.PointerGestures.Rendering.Tests/bin \
+	  bindings/dotnet/tests/NaviApps.PointerGestures.Rendering.Tests/obj
 
 format:
 	$(SDK_TOOLING) quality format --dotnet
