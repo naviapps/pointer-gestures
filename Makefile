@@ -1,4 +1,5 @@
 SDK_TOOLING ?= mise run sdk-tooling --
+BROWSER_ARTIFACTS ?= $(shell mktemp -d)
 SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
 ARTIFACTS := $(CURDIR)/Artifacts
 
@@ -70,10 +71,8 @@ check-web-types:
 check-web-reproducibility:
 	$(SDK_TOOLING) python -m fixtures.distribution.web_reproducibility
 
-# Uses the package staged by CI under NAVI_CI_ARTIFACTS/web/package.
-# Set POINTER_GESTURES_WEB_PACKAGE to select a verified package in the owned guest.
 check-web-browser:
-	python3 -I -B .github/scripts/check-web-browser.py
+	$(SDK_TOOLING) python -m fixtures.distribution.web_browser --artifacts "$(BROWSER_ARTIFACTS)"
 
 build:
 	swift build $(SWIFT_STRICT_FLAGS)

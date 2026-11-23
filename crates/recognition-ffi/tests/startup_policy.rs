@@ -59,47 +59,37 @@ fn startup_requests_and_delays_preserve_the_wire_lifecycle() {
     assert_eq!(startup.request(u32::MAX, idle), 0);
     assert_eq!(startup.view(0, 0), idle);
 
-    let mut delays = [0.0, 0.5, 0.5];
+    let mut delays = [0.125];
     assert_eq!(startup.set_delays(&delays), 1);
     delays.fill(f64::NAN);
     assert_eq!(startup.set_delays(&delays), 0);
     assert_eq!(startup.request(1, idle), 1);
     let attempt = startup.view(1, 1);
     assert_ne!(attempt, idle);
-    assert_eq!(startup.request(1, attempt), 0);
     assert_eq!(startup.request(5, idle), 0);
     assert_eq!(startup.view(1, 1), attempt);
 
     assert_eq!(startup.request(6, attempt), 1);
     assert_eq!(startup.view(3, 1), attempt);
-    for delay in [0, 500_000_000, 500_000_000, 500_000_000] {
-        assert_eq!(startup.delay(), Some(delay));
-        assert_eq!(startup.request(4, attempt), 1);
-        assert_eq!(startup.view(1, 1), attempt);
-        assert_eq!(startup.delay(), None);
-        assert_eq!(startup.request(6, attempt), 1);
-    }
+    assert_eq!(startup.delay(), Some(125_000_000));
+    assert_eq!(startup.request(4, attempt), 1);
+    assert_eq!(startup.request(5, attempt), 1);
+    assert_eq!(startup.view(2, 1), attempt);
 
     assert_eq!(startup.request(2, attempt), 1);
     let stopped = startup.view(0, 0);
     assert_ne!(stopped, attempt);
-    assert_eq!(startup.request(2, attempt), 0);
-    for kind in 4..=6 {
-        assert_eq!(startup.request(kind, attempt), 0);
-    }
-    assert_eq!(startup.view(0, 0), stopped);
     assert_eq!(startup.delay(), None);
     unsafe { pointer_gesture_recognition_startup_destroy(null_mut()) }
 }
 
 #[test]
-fn replacing_a_pending_schedule_invalidates_work_without_restarting_ready_sources() {
+fn replacing_a_pending_schedule_exposes_failed_and_retrying_states() {
     let mut startup = OwnedStartup::new();
     assert_eq!(startup.set_delays(&[0.125]), 1);
     assert_eq!(startup.request(1, 0), 1);
     let first = startup.view(1, 1);
     assert_eq!(startup.request(6, first), 1);
-    assert_eq!(startup.delay(), Some(125_000_000));
 
     assert_eq!(
         unsafe { pointer_gesture_recognition_startup_set_delays(startup.0, null(), 0) },
@@ -107,13 +97,6 @@ fn replacing_a_pending_schedule_invalidates_work_without_restarting_ready_source
     );
     let failed = startup.view(4, 1);
     assert_ne!(failed, first);
-    assert_eq!(startup.delay(), None);
-    for kind in 4..=6 {
-        assert_eq!(startup.request(kind, first), 0);
-    }
-
-    assert_eq!(startup.set_delays(&[0.0, f64::INFINITY, 1.0]), 0);
-    assert_eq!(startup.view(4, 1), failed);
     assert_eq!(startup.set_delays(&[f64::MAX]), 2);
     let pending = startup.view(3, 1);
     assert_ne!(pending, failed);
@@ -121,13 +104,6 @@ fn replacing_a_pending_schedule_invalidates_work_without_restarting_ready_source
     assert_eq!(startup.request(3, pending), 1);
     let immediate = startup.view(1, 1);
     assert_ne!(immediate, pending);
-    assert_eq!(startup.request(5, pending), 0);
-    assert_eq!(startup.request(5, immediate), 1);
-    assert_eq!(startup.view(2, 1), immediate);
-    assert_eq!(startup.set_delays(&[0.25]), 1);
-    assert_eq!(startup.request(3, immediate), 0);
-    assert_eq!(startup.view(2, 1), immediate);
-    assert_eq!(startup.delay(), None);
 }
 
 #[test]

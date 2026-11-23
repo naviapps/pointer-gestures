@@ -6,11 +6,14 @@ namespace NaviApps.PointerGestures.Rendering;
 /// <summary>Immutable Rust-validated trace compared by its ordered directions, points and optional tail.</summary>
 public sealed class OverlayTrace : IEquatable<OverlayTrace>
 {
+    private readonly SnapshotValues<Direction> directions;
+    private readonly SnapshotValues<GesturePoint> points;
+
     internal TraceHandle Handle { get; }
     /// <summary>Captured cardinal directions copied from caller or native storage.</summary>
-    public ReadOnlyCollection<Direction> Directions { get; }
+    public ReadOnlyCollection<Direction> Directions => directions;
     /// <summary>Origin and one endpoint per direction, in the same display space as the tail and viewport.</summary>
-    public ReadOnlyCollection<GesturePoint> Points { get; }
+    public ReadOnlyCollection<GesturePoint> Points => points;
     /// <summary>Newest finite pointer position when supplied.</summary>
     public GesturePoint? Tail { get; }
 
@@ -22,8 +25,8 @@ public sealed class OverlayTrace : IEquatable<OverlayTrace>
         var ownedPoints = points.ToArray();
         Handle = CreateHandle(ownedDirections, ownedPoints, tail)
             ?? throw new ArgumentException("Empty, invalid, mismatched or non-finite trace.");
-        Directions = SnapshotValues<Direction>.TakeOwned(ownedDirections);
-        Points = SnapshotValues<GesturePoint>.TakeOwned(ownedPoints);
+        this.directions = SnapshotValues<Direction>.TakeOwned(ownedDirections);
+        this.points = SnapshotValues<GesturePoint>.TakeOwned(ownedPoints);
         Tail = tail;
     }
 
@@ -49,7 +52,7 @@ public sealed class OverlayTrace : IEquatable<OverlayTrace>
             if (converted.Trace == 0) return null;
             var handle = new TraceHandle(converted.Trace);
             return converted.ReusedGeometry != 0 && previous is not null
-                ? new OverlayTrace(handle, previous.Directions, previous.Points, tail)
+                ? new OverlayTrace(handle, previous.directions, previous.points, tail)
                 : new OverlayTrace(handle);
         }
     }
@@ -71,44 +74,32 @@ public sealed class OverlayTrace : IEquatable<OverlayTrace>
         Handle = owned;
         if (Handle.IsInvalid) throw new InvalidDataException("Invalid native trace.");
         var view = Native.TraceView(Handle);
-        Directions = SnapshotValues<Direction>.TakeOwned(new ReadOnlySpan<Direction>(view.Directions, checked((int)view.Count)).ToArray());
-        Points = SnapshotValues<GesturePoint>.TakeOwned(new ReadOnlySpan<GesturePoint>(view.Points, checked((int)view.PointCount)).ToArray());
+        directions = SnapshotValues<Direction>.TakeOwned(new ReadOnlySpan<Direction>(view.Directions, checked((int)view.Count)).ToArray());
+        points = SnapshotValues<GesturePoint>.TakeOwned(new ReadOnlySpan<GesturePoint>(view.Points, checked((int)view.PointCount)).ToArray());
         Tail = view.TailPresent == 0 ? null : view.Tail;
     }
     /// <summary>Create an immutable tail replacement sharing native geometry and managed coordinates.</summary>
-    public OverlayTrace WithTail(GesturePoint? tail) =>
-        TryWithTail(tail) ?? throw new ArgumentException("Tail must be finite.", nameof(tail));
-
-    private OverlayTrace? TryWithTail(GesturePoint? tail)
+    public OverlayTrace WithTail(GesturePoint? tail)
     {
         var pointer = Native.TraceWithTail(Handle, tail ?? default, tail.HasValue ? 1u : 0u);
-        return pointer == 0 ? null : new OverlayTrace(new TraceHandle(pointer), Directions, Points, tail);
+        if (pointer == 0) throw new ArgumentException("Tail must be finite.", nameof(tail));
+        return new OverlayTrace(new TraceHandle(pointer), directions, points, tail);
     }
-    private OverlayTrace(TraceHandle handle, ReadOnlyCollection<Direction> directions, ReadOnlyCollection<GesturePoint> points, GesturePoint? tail)
-    { Handle = handle; Directions = directions; Points = points; Tail = tail; }
+    private OverlayTrace(TraceHandle handle, SnapshotValues<Direction> directions, SnapshotValues<GesturePoint> points, GesturePoint? tail)
+    { Handle = handle; this.directions = directions; this.points = points; Tail = tail; }
     /// <summary>Test conservative stroke/tail visibility using immutable Rust-owned cached bounds.</summary>
     public bool Intersects(Bounds viewport, double lineWidth = 0) => Native.TraceIntersects(Handle, viewport, lineWidth) != 0;
 
     /// <inheritdoc/>
     public bool Equals(OverlayTrace? other)
         => ReferenceEquals(this, other)
-        || (other is not null && Tail == other.Tail
-            && (ReferenceEquals(Directions, other.Directions) || Directions.SequenceEqual(other.Directions))
-            && (ReferenceEquals(Points, other.Points) || Points.SequenceEqual(other.Points)));
+        || (other is not null && Tail == other.Tail && directions.Equals(other.directions) && points.Equals(other.points));
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => obj is OverlayTrace trace && Equals(trace);
 
     /// <inheritdoc/>
-    public override int GetHashCode()
-    {
-        var hash = new HashCode();
-        hash.Add(Tail);
-        hash.Add(Directions.Count);
-        foreach (var direction in Directions) hash.Add(direction);
-        foreach (var point in Points) hash.Add(point);
-        return hash.ToHashCode();
-    }
+    public override int GetHashCode() => HashCode.Combine(Tail, directions, points);
 
     /// <summary>Compare immutable trace values, including null.</summary>
     public static bool operator ==(OverlayTrace? left, OverlayTrace? right)

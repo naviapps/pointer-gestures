@@ -22,13 +22,13 @@ final class GestureRecognizerMatchingTests: XCTestCase {
 
     let end = GesturePoint(x: 40, y: 0)
     func drag(_ expected: GestureEventDisposition) {
-      assertDisposition(
+      XCTAssertEqual(
         eventSource.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)),
         expected)
-      assertDisposition(
+      XCTAssertEqual(
         eventSource.send(makeGestureInputEvent(kind: .buttonMoved(.secondary), location: end)),
         expected)
-      assertDisposition(
+      XCTAssertEqual(
         eventSource.send(makeGestureInputEvent(kind: .buttonUp(.secondary), location: end)),
         expected)
     }
@@ -44,7 +44,7 @@ final class GestureRecognizerMatchingTests: XCTestCase {
     XCTAssertEqual(matcherRequests, 1)
     XCTAssertEqual(recognizer.snapshot.status.lastRecordedDirections, [.right])
     XCTAssertEqual(recognizer.snapshot.lastSessionReport?.outcome, .recorded)
-    assertReplayRequests(replayRequests, [.drag(button: .secondary, points: [.zero, end])])
+    XCTAssertEqual(replayRequests, [.drag(button: .secondary, points: [.zero, end])])
   }
 
   func testMatchCallsOnMatchAndConsumesButtonUp() {
@@ -94,12 +94,12 @@ final class GestureRecognizerMatchingTests: XCTestCase {
 
     let drag = makeGestureInputEvent(
       kind: .buttonMoved(.secondary), location: .init(x: 100, y: 10))
-    assertDisposition(eventSource.send(drag), .consume)
+    XCTAssertEqual(eventSource.send(drag), .consume)
 
     let up = makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 120, y: 10))
     let result = eventSource.send(up)
 
-    assertDisposition(result, .consume)
+    XCTAssertEqual(result, .consume)
     XCTAssertEqual(calledIDs, [matchedID])
     XCTAssertEqual(clickRequestCount, 0)
     XCTAssertEqual(releaseRequests, [.init(x: 120, y: 10)])
@@ -135,13 +135,13 @@ final class GestureRecognizerMatchingTests: XCTestCase {
     _ = eventSource.send(
       makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 100, y: 10))
       ),
       .consume
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 120, y: 10))
       ),
@@ -193,7 +193,7 @@ final class GestureRecognizerMatchingTests: XCTestCase {
     )
 
     XCTAssertEqual(calledIDs, [matchedID])
-    assertReplayRequests(replayRequests, [.release(button: .secondary, at: .init(x: 120, y: 10))])
+    XCTAssertEqual(replayRequests, [.release(button: .secondary, at: .init(x: 120, y: 10))])
   }
 
   func testMatchCallbackReceivesCompletedSnapshot() {
@@ -231,7 +231,7 @@ final class GestureRecognizerMatchingTests: XCTestCase {
     _ = eventSource.send(
       makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 100, y: 10))
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 120, y: 10))
       ),

@@ -39,7 +39,7 @@ final class GestureRecognizerDeinitTests: XCTestCase {
       XCTAssertTrue(recognizer.snapshot.status.isCapturingGesture)
     }
 
-    assertReplayRequests(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 10))])
+    XCTAssertEqual(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 10))])
     XCTAssertEqual(stopCountWhenReplayWasRequested, 1)
     XCTAssertEqual(eventSource.stopCount, 1)
   }
@@ -79,7 +79,7 @@ final class GestureRecognizerDeinitTests: XCTestCase {
       XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     }
 
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [.click(button: .secondary, at: .init(x: 10, y: 10))]
     )

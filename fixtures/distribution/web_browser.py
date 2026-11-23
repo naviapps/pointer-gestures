@@ -41,8 +41,14 @@ def main():
     parser.add_argument(
         "--artifacts",
         type=Path,
-        help="Write evidence outside the repository and test the local .web-build/package",
+        required=True,
+        help="Write evidence under this absolute path outside the repository",
     )
+    parser.add_argument(
+        "--package", type=Path, help="Generated package (default: .web-build/package)"
+    )
+    parser.add_argument("--source-revision", help="Commit of a previously verified SDK package")
+    parser.add_argument("--provenance-sha256", help="Expected SHA-256 of the package provenance")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     fixture = root / "bindings/web/tests/browser"
@@ -50,39 +56,8 @@ def main():
         platform.system() == "Darwin" and platform.machine() == "arm64",
         "Browser acceptance requires a macOS ARM64 runner",
     )
-    if args.artifacts is None:
-        tools = Path(os.environ["NAVI_CI_TOOLS_ROOT"]).resolve(strict=True)
-        temporary = Path(os.environ["RUNNER_TEMP"])
-        artifacts = Path(os.environ["NAVI_CI_ARTIFACTS"])
-        package = Path(os.environ.get("POINTER_GESTURES_WEB_PACKAGE", artifacts / "web/package"))
-        source = os.environ.get("NAVI_CI_SOURCE_COMMIT", os.environ.get("GITHUB_SHA", ""))
-        expected = os.environ.get("POINTER_GESTURES_WEB_EXPECTED_SOURCE", source)
-        pinned_provenance = os.environ.get("POINTER_GESTURES_WEB_EXPECTED_PROVENANCE_SHA256")
-        node, npm, python = (
-            tools / path for path in ("node/bin/node", "node/bin/npm", "python/bin/python3")
-        )
-        require(
-            python.resolve(strict=True) == Path(sys.executable).resolve(strict=True),
-            "Expected the prepared Python executable",
-        )
-        for path in (node, npm, python):
-            require(
-                path.resolve(strict=True).is_relative_to(tools), "Runtime leaves prepared prefix"
-            )
-    else:
-        temporary = Path(os.environ.get("RUNNER_TEMP") or tempfile.gettempdir())
-        artifacts = args.artifacts
-        package = root / ".web-build/package"
-        source = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
-        require(
-            source == os.environ.get("GITHUB_SHA", source), "Checkout differs from Actions source"
-        )
-        expected = source
-        pinned_provenance = None
-        node_path, npm_path = shutil.which("node"), shutil.which("npm")
-        require(node_path and npm_path, "Run with the Node and npm versions selected by mise")
-        node, npm, python = Path(node_path), Path(npm_path), Path(sys.executable)
-
+    temporary = Path(os.environ.get("RUNNER_TEMP") or tempfile.gettempdir())
+    artifacts = args.artifacts
     require(
         temporary.is_absolute()
         and artifacts.is_absolute()
@@ -90,18 +65,19 @@ def main():
         and not artifacts.resolve().is_relative_to(root),
         "Expected absolute temporary and artifact paths outside source",
     )
-    output = artifacts / "web-browser"
-    output.mkdir(parents=True)
-    package = package.resolve(strict=True)
+    package = (args.package or root / ".web-build/package").resolve(strict=True)
+    source = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+    require(source == os.environ.get("GITHUB_SHA", source), "Checkout differs from Actions source")
+    expected = args.source_revision or source
     require(
         re.fullmatch("[a-f0-9]{40}", source) and re.fullmatch("[a-f0-9]{40}", expected),
         "Expected immutable fixture and SDK source identities",
     )
     provenance_sha = digest(package / "provenance.json")
     if expected != source:
-        require(pinned_provenance, "A reused SDK package needs its pinned provenance digest")
-    if pinned_provenance:
-        require(provenance_sha == pinned_provenance, "SDK package provenance differs")
+        require(args.provenance_sha256, "A reused SDK package needs its pinned provenance digest")
+    if args.provenance_sha256:
+        require(provenance_sha == args.provenance_sha256, "SDK package provenance differs")
     provenance = json.loads((package / "provenance.json").read_text())
     require(provenance["sourceRevision"] == expected, "SDK package source differs")
     hashes = {"provenance.json": provenance_sha, **provenance["outputs"]}
@@ -120,8 +96,13 @@ def main():
         )
     )
     require(checksums == hashes, "SDK package checksums differ")
+
+    node_path, npm_path = shutil.which("node"), shutil.which("npm")
+    require(node_path and npm_path, "Run with the Node and npm versions selected by mise")
+    node, npm, python = Path(node_path), Path(npm_path), Path(sys.executable)
+    output = artifacts / "web-browser"
+    output.mkdir(parents=True)
     before = {str(path): digest(path) for path in (node, npm, python)}
-    inherited = {name: os.environ.get(name) for name in ("HOME", "CFFIXED_USER_HOME")}
     summary = {
         "result": "failed",
         "fixtureSourceRevision": source,
@@ -242,14 +223,12 @@ def main():
                 result="passed", browserReceiptSHA256=digest(output / "browser-consumer.json")
             )
     finally:
-        unchanged = before == {
-            str(path): digest(path) for path in (node, npm, python)
-        } and inherited == {name: os.environ.get(name) for name in inherited}
-        summary["preparedRuntimesAndInheritedHomesUnchanged"] = unchanged
+        unchanged = before == {str(path): digest(path) for path in (node, npm, python)}
+        summary["runtimesUnchanged"] = unchanged
         if not unchanged:
             summary["result"] = "failed"
         (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
-        require(unchanged, "Prepared runtimes or inherited homes changed")
+        require(unchanged, "Browser runtime executables changed")
 
 
 if __name__ == "__main__":

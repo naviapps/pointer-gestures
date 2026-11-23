@@ -146,13 +146,13 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
                 onReplayRequested: { request in
                   replays.append(request)
                   guard replays.count == 1, let recognizer = current else { return }
-                  assertDisposition(
+                  XCTAssertEqual(
                     source.send(
                       makeGestureInputEvent(
                         kind: .buttonDown(.secondary), location: .init(x: 100, y: 0))),
                     .consume)
                   if replacementActive {
-                    assertDisposition(
+                    XCTAssertEqual(
                       source.send(
                         makeGestureInputEvent(
                           kind: .buttonMoved(.secondary), location: .init(x: 140, y: 0))),
@@ -202,7 +202,7 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
             XCTAssertTrue(matches.isEmpty, scenario)
 
             // Only the replacement's own release may complete or recover it.
-            assertDisposition(
+            XCTAssertEqual(
               source.send(
                 makeGestureInputEvent(
                   kind: .buttonUp(.secondary),
@@ -242,12 +242,12 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
           onReplayRequested: { request in
             replays.append(request)
             guard replays.count == 1 else { return }
-            assertDisposition(
+            XCTAssertEqual(
               source.send(
                 makeGestureInputEvent(
                   kind: .buttonDown(.secondary), location: .init(x: 100, y: 0))),
               .consume)
-            assertDisposition(
+            XCTAssertEqual(
               source.send(
                 makeGestureInputEvent(
                   kind: .buttonMoved(.secondary), location: .init(x: 140, y: 0))),
@@ -258,14 +258,14 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
       recognizer.nowOverride = { clock.now }
       recognizer.start()
       defer { recognizer.stop() }
-      assertDisposition(
+      XCTAssertEqual(
         source.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)),
         .consume)
       let originalGeneration = recognizer.inputGeneration
       clock.now = try XCTUnwrap(recognizer.nextDeadline)
 
       let end = GesturePoint(x: 180, y: 0)
-      assertDisposition(
+      XCTAssertEqual(
         source.send(makeGestureInputEvent(kind: .buttonUp(releasedButton), location: end)),
         .passThrough)
       XCTAssertEqual(replays, [.click(button: .secondary, at: .zero)])
@@ -274,7 +274,7 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
       XCTAssertNotEqual(recognizer.inputGeneration, originalGeneration)
       XCTAssertTrue(recognizer.snapshot.status.isCapturingGesture)
 
-      assertDisposition(
+      XCTAssertEqual(
         source.send(makeGestureInputEvent(kind: .buttonUp(.secondary), location: end)),
         .consume)
       XCTAssertEqual(matches, ["right"])
@@ -296,7 +296,7 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
         onReplayRequested: { request in
           replays.append(request)
           guard replays.count == 1 else { return }
-          assertDisposition(
+          XCTAssertEqual(
             source.send(
               makeGestureInputEvent(kind: .buttonDown(.secondary), location: replacement)),
             .consume)
@@ -306,13 +306,13 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
     recognizer.isRecordingModeEnabled = true
     recognizer.start()
     defer { recognizer.stop() }
-    assertDisposition(
+    XCTAssertEqual(
       source.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)),
       .consume)
     let originalGeneration = recognizer.inputGeneration
     clock.now = try XCTUnwrap(recognizer.nextDeadline)
 
-    assertDisposition(
+    XCTAssertEqual(
       source.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 140, y: 0))),
       .passThrough)
@@ -321,7 +321,7 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
 
     let nextLocation = GesturePoint(x: 160, y: 0)
-    assertDisposition(
+    XCTAssertEqual(
       source.send(makeGestureInputEvent(kind: .buttonMoved(.secondary), location: nextLocation)),
       .consume)
     XCTAssertEqual(recognizer.snapshot.trace.directionEndpoints, [replacement, nextLocation])
@@ -340,7 +340,7 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
           onReplayRequested: { request in
             replays.append(request)
             guard replays.count == 1 else { return }
-            assertDisposition(
+            XCTAssertEqual(
               source.send(
                 makeGestureInputEvent(kind: .buttonDown(.secondary), location: reentrantPress)),
               .consume)
@@ -354,12 +354,12 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
       recognizer.isRecordingModeEnabled = true
       recognizer.start()
       defer { recognizer.stop() }
-      assertDisposition(
+      XCTAssertEqual(
         source.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)),
         .consume)
       clock.now = expired ? try XCTUnwrap(recognizer.nextDeadline) : 1
 
-      assertDisposition(
+      XCTAssertEqual(
         source.send(
           makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 60, y: 0))),
         .passThrough)
@@ -369,7 +369,7 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
         recognizer.snapshot.lastSessionReport?.outcome, expired ? .totalDeadline : .superseded)
 
       let nextLocation = GesturePoint(x: 140, y: 0)
-      assertDisposition(
+      XCTAssertEqual(
         source.send(makeGestureInputEvent(kind: .buttonMoved(.secondary), location: nextLocation)),
         .consume)
       XCTAssertEqual(recognizer.snapshot.trace.directionEndpoints, [reentrantPress, nextLocation])
@@ -386,20 +386,20 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
         onReplayRequested: { request in
           replays.append(request)
           guard replays.count == 1 else { return }
-          assertDisposition(
+          XCTAssertEqual(
             source.send(
               makeGestureInputEvent(kind: .buttonDown(.secondary), location: nestedPress)),
             .consume)
-          assertDisposition(
+          XCTAssertEqual(
             source.send(makeGestureInputEvent(kind: .buttonUp(.secondary), location: nestedPress)),
             .consume)
         }))
     recognizer.start()
     defer { recognizer.stop() }
-    assertDisposition(
+    XCTAssertEqual(
       source.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)),
       .consume)
-    assertDisposition(
+    XCTAssertEqual(
       source.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 60, y: 0))),
       .passThrough)
@@ -419,14 +419,14 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
     current = recognizer
     recognizer.start()
     defer { recognizer.stop() }
-    assertDisposition(
+    XCTAssertEqual(
       source.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)),
       .consume)
-    assertDisposition(
+    XCTAssertEqual(
       source.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 60, y: 0))),
       .consume)
-    assertDisposition(
+    XCTAssertEqual(
       source.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 100, y: 0))),
       .consume)
@@ -452,10 +452,10 @@ final class GestureRecognizerReentrancyTests: XCTestCase {
     current = recognizer
     recognizer.start()
     defer { recognizer.stop() }
-    assertDisposition(
+    XCTAssertEqual(
       source.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)),
       .consume)
-    assertDisposition(
+    XCTAssertEqual(
       source.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 60, y: 0))),
       .passThrough)

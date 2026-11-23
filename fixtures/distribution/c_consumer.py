@@ -4,8 +4,9 @@ import argparse
 from pathlib import Path
 
 from sdk_tooling.adapters import load
+from sdk_tooling.native_plan import builder
 
-from fixtures.distribution.sdk import KINDS, SDK
+from fixtures.distribution.sdk import KINDS
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -20,7 +21,8 @@ def main():
 
     check_installed = load("installed_consumers").check_installed
     for kind in KINDS:
-        module = SDK(ROOT, kind).module
+        native = builder(ROOT, kind)
+        framework = native.artifact / "macos-arm64_x86_64" / (native.module + ".framework")
         argv = ["--language", "c"]
         if args.revision is not None:
             argv.extend(("--revision", args.revision))
@@ -30,10 +32,10 @@ def main():
             root=ROOT,
             git_url="https://github.com/naviapps/pointer-gestures",
             rust_packages=(),
-            framework=f"Artifacts/{module}.xcframework/macos-arm64_x86_64/{module}.framework",
+            framework=framework.relative_to(ROOT).as_posix(),
             header=f"pointer_gesture_{kind}.h",
             c_fixture=f"fixtures/c-consumer/{kind}.c",
-            c_receipt=f"Artifacts/{module}.build.json",
+            c_receipt=native.receipt.relative_to(ROOT).as_posix(),
             argv=argv,
         )
 

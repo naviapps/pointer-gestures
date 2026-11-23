@@ -163,9 +163,9 @@ final class GestureRecognizerTuningTests: XCTestCase {
     XCTAssertEqual(recognizer.snapshot.trace.rawPoints, [tail])
     XCTAssertEqual(before.rawPoints, [.zero, .init(x: 20, y: 0)])
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(makeGestureInputEvent(kind: .buttonUp(.secondary), location: tail)), .consume
     )
-    assertReplayRequests(replays, [.drag(button: .secondary, points: [.zero, tail])])
+    XCTAssertEqual(replays, [.drag(button: .secondary, points: [.zero, tail])])
   }
 }

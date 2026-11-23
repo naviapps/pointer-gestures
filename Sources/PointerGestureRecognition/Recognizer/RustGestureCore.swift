@@ -31,11 +31,10 @@ final class RustGestureCore<Match: Sendable> {
     }
   }
 
-  func useMatcher(_ matcher: GesturePatternMatcher<Match>) -> Bool {
-    guard let handle else { return false }
+  func useMatcher(_ matcher: GesturePatternMatcher<Match>) {
+    guard let handle else { return }
     matcher.withForeignHandle { pointer_gesture_recognition_engine_use_matcher(handle, $0) }
     self.matcher = matcher
-    return true
   }
 
   func updateTuning(
@@ -81,12 +80,9 @@ enum GestureCoreDelivery<Match: Sendable>: Sendable {
   case trace(GestureRecognizerState)
 }
 
-extension GestureCoreDelivery: Equatable where Match: Equatable {}
-
 /// A complete value copy releases the foreign frame before the host can reenter the adapter.
 struct GestureCoreFrame<Match: Sendable>: Sendable {
   let disposition: UInt32
-  let stage: UInt32
   let inputGeneration: UInt64
   let discardVisible: Bool
   let state: GestureRecognizerState
@@ -97,18 +93,9 @@ struct GestureCoreFrame<Match: Sendable>: Sendable {
     defer { pointer_gesture_recognition_frame_destroy(frame) }
     let value = pointer_gesture_recognition_frame_view(frame)
     disposition = value.disposition
-    stage = value.stage
     inputGeneration = value.input_generation
     discardVisible = value.discard_visible != 0
     deadline = value.deadline_present == 0 ? nil : value.deadline_ns
-    let failure: GestureRecognizerFailure?
-    switch value.failure {
-    case 0: failure = nil
-    case 1: failure = .recognitionDisabled
-    case 2: failure = .modifiersNotSatisfied
-    case 3: failure = .gestureSessionExpired
-    default: preconditionFailure("Unknown core failure")
-    }
     // Copies can share Swift value storage when native views alias within this frame.
     // Every array is owned before the foreign frame is released or callbacks run.
     let finalState = GestureRecognizerState(
@@ -117,7 +104,7 @@ struct GestureCoreFrame<Match: Sendable>: Sendable {
         isCapturingGesture: value.capturing != 0,
         isRecordingModeEnabled: value.recording != 0,
         lastRecordedDirections: Self.directions(value.recorded),
-        lastFailure: failure),
+        lastFailure: Self.failure(value.failure)),
       trace: .init(
         isVisible: value.visible != 0,
         discardsPendingPresentation: value.discard_visible != 0, rawPoints: Self.points(value.raw),
@@ -137,14 +124,6 @@ struct GestureCoreFrame<Match: Sendable>: Sendable {
         return .match(match)
       case 6:
         let trace = effect.trace
-        let failure: GestureRecognizerFailure?
-        switch effect.failure {
-        case 0: failure = nil
-        case 1: failure = .recognitionDisabled
-        case 2: failure = .modifiersNotSatisfied
-        case 3: failure = .gestureSessionExpired
-        default: preconditionFailure("Unknown publication failure")
-        }
         return .trace(
           .init(
             status: .init(
@@ -155,7 +134,7 @@ struct GestureCoreFrame<Match: Sendable>: Sendable {
                 effect.recorded.data == value.recorded.data
                 && effect.recorded.count == value.recorded.count
                 ? finalState.status.lastRecordedDirections : Self.directions(effect.recorded),
-              lastFailure: failure),
+              lastFailure: Self.failure(effect.failure)),
             trace: .init(
               isVisible: trace.visible != 0,
               discardsPendingPresentation: value.discard_visible != 0,
@@ -188,6 +167,16 @@ struct GestureCoreFrame<Match: Sendable>: Sendable {
         }
       default: preconditionFailure("Unknown core delivery")
       }
+    }
+  }
+
+  private static func failure(_ code: UInt32) -> GestureRecognizerFailure? {
+    switch code {
+    case 0: nil
+    case 1: .recognitionDisabled
+    case 2: .modifiersNotSatisfied
+    case 3: .gestureSessionExpired
+    default: preconditionFailure("Unknown core failure")
     }
   }
 

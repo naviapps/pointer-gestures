@@ -107,6 +107,23 @@ pub(crate) fn offset(p: Point, v: Point, distance: f64) -> Point {
     }
 }
 
+pub(crate) fn validate_trace_shape(
+    directions: &[Direction],
+    points: &[Point],
+    tail: Option<Point>,
+) -> Result<(), GeometryError> {
+    if directions.is_empty() {
+        return Err(GeometryError::Empty);
+    }
+    if directions.len().checked_add(1) != Some(points.len()) {
+        return Err(GeometryError::PointCount);
+    }
+    if tail.is_some_and(|point| !point.is_finite()) {
+        return Err(GeometryError::NonFinite);
+    }
+    Ok(())
+}
+
 /// Project each captured run onto its cardinal axis while retaining the stroke
 /// origin. Round perpendicular corners once, bounded by 24 points at the default
 /// scale and half of either adjacent segment, matching the website trace style.
@@ -117,13 +134,8 @@ pub fn live_trace(
     tail: Option<Point>,
     style: CornerStyle,
 ) -> Result<Path, GeometryError> {
-    if directions.is_empty() {
-        return Err(GeometryError::Empty);
-    }
-    if directions.len().checked_add(1) != Some(points.len()) {
-        return Err(GeometryError::PointCount);
-    }
-    if points.iter().any(|p| !p.is_finite()) || tail.is_some_and(|p| !p.is_finite()) {
+    validate_trace_shape(directions, points, tail)?;
+    if points.iter().any(|point| !point.is_finite()) {
         return Err(GeometryError::NonFinite);
     }
     let point_at = |index| {
@@ -277,8 +289,8 @@ pub struct Bounds {
 impl Bounds {
     /// Enclose finite points; empty or non-finite input returns none.
     pub fn from_points(points: &[Point]) -> Option<Self> {
-        let first = points.first()?;
-        if !points.iter().all(|p| p.is_finite()) {
+        let (&first, remaining) = points.split_first()?;
+        if !first.is_finite() {
             return None;
         }
         let mut value = Self {
@@ -287,8 +299,11 @@ impl Bounds {
             max_x: first.x,
             max_y: first.y,
         };
-        for p in &points[1..] {
-            value.include(*p);
+        for &point in remaining {
+            if !point.is_finite() {
+                return None;
+            }
+            value.include(point);
         }
         Some(value)
     }

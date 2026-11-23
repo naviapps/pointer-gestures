@@ -1,6 +1,5 @@
 """Shared layout for the two independently consumable gesture SDKs."""
 
-import re
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,21 +21,8 @@ class SDK:
         return self.root / "crates" / (self.kind + "-ffi")
 
     @property
-    def crate_paths(self):
-        names = (
-            ("recognition", "recognition-ffi", "recognition-windows")
-            if self.kind == "recognition"
-            else ("recognition", "rendering", "rendering-ffi", "rendering-windows")
-        )
-        return tuple(self.root / "crates" / name for name in names)
-
-    @property
     def package(self):
         return tomllib.loads((self.ffi / "Cargo.toml").read_text())["package"]["name"]
-
-    @property
-    def module(self):
-        return re.search(r"module (\w+)", (self.ffi / "module.modulemap").read_text())[1]
 
     @property
     def managed_id(self):

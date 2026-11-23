@@ -42,7 +42,7 @@ final class GestureRecognizerStartupRetryTests: XCTestCase {
 
     recognizer.start()
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)),
       .passThrough
     )

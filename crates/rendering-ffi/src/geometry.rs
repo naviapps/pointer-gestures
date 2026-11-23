@@ -106,7 +106,7 @@ pub unsafe extern "C" fn pointer_gesture_rendering_live_trace(
             return Err(GeometryError::InvalidBuffer);
         }
         let path = pointer_gesture_rendering::live_trace(
-            &directions,
+            directions,
             points,
             (tail_present != 0).then_some(tail),
             CornerStyle { radius_scale },
@@ -136,7 +136,7 @@ pub unsafe extern "C" fn pointer_gesture_rendering_pattern(
             return Err(GeometryError::InvalidBuffer);
         }
         pointer_gesture_rendering::pattern(
-            &unsafe { directions(data, count) }?,
+            unsafe { directions(data, count) }?,
             width,
             height,
             padding,

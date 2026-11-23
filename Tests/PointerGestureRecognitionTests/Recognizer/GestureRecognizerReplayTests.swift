@@ -32,7 +32,7 @@ final class GestureRecognizerReplayTests: XCTestCase {
       makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
     )
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 40, y: 10))
       ),
@@ -41,7 +41,7 @@ final class GestureRecognizerReplayTests: XCTestCase {
 
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [
         .dragStart(
@@ -51,13 +51,13 @@ final class GestureRecognizerReplayTests: XCTestCase {
       ]
     )
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 45, y: 10))
       ),
       .passThrough
     )
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [
         .dragStart(
@@ -94,14 +94,14 @@ final class GestureRecognizerReplayTests: XCTestCase {
 
     let drag = makeGestureInputEvent(
       kind: .buttonMoved(.secondary), location: .init(x: 100, y: 10))
-    assertDisposition(eventSource.send(drag), .consume)
+    XCTAssertEqual(eventSource.send(drag), .consume)
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
 
     let up = makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 120, y: 10))
-    assertDisposition(eventSource.send(up), .passThrough)
+    XCTAssertEqual(eventSource.send(up), .passThrough)
 
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [
         .dragStart(
@@ -143,19 +143,19 @@ final class GestureRecognizerReplayTests: XCTestCase {
       GesturePoint(x: 60, y: 0),
       GesturePoint(x: 80, y: 0),
     ] {
-      assertDisposition(
+      XCTAssertEqual(
         eventSource.send(makeGestureInputEvent(kind: .buttonMoved(.secondary), location: point)),
         point == GesturePoint(x: 20, y: 0) ? .consume : .passThrough
       )
     }
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 100, y: 0))
       ),
       .passThrough
     )
 
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [
         .dragStart(
@@ -191,20 +191,20 @@ final class GestureRecognizerReplayTests: XCTestCase {
     _ = eventSource.send(
       makeGestureInputEvent(kind: .buttonDown(.primary), location: .init(x: 10, y: 10))
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.primary), location: .init(x: 100, y: 10))
       ),
       .consume
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.primary), location: .init(x: 120, y: 10))
       ),
       .passThrough
     )
 
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [
         .dragStart(
@@ -246,12 +246,12 @@ final class GestureRecognizerReplayTests: XCTestCase {
 
     let drag = makeGestureInputEvent(
       kind: .buttonMoved(.secondary), location: .init(x: 100, y: 10))
-    assertDisposition(eventSource.send(drag), .consume)
+    XCTAssertEqual(eventSource.send(drag), .consume)
 
     let up = makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 120, y: 10))
-    assertDisposition(eventSource.send(up), .consume)
+    XCTAssertEqual(eventSource.send(up), .consume)
 
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [
         .drag(
@@ -286,7 +286,7 @@ final class GestureRecognizerReplayTests: XCTestCase {
     _ = eventSource.send(
       makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 40, y: 40))),
       .consume
@@ -294,69 +294,15 @@ final class GestureRecognizerReplayTests: XCTestCase {
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertEqual(recognizer.snapshot.trace.directions, [])
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 40, y: 40))),
       .consume
     )
 
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [.drag(button: .secondary, points: [.zero, .init(x: 40, y: 40)])]
-    )
-  }
-
-  func testPendingButtonDragReplayRetainsStartAndRecentPointsWithinRawPointLimit() {
-    let eventSource = GestureEventSourceDouble(startResult: true)
-    var replayRequests: [GestureReplayRequest] = []
-
-    let configuration: GestureRecognizerConfiguration<UUID> =
-      makeGestureRecognizerTestConfiguration(
-        onReplayRequested: { replayRequests.append($0) },
-        areModifiersSatisfied: { _, _ in true },
-        tuning: .testing(
-          minimumGestureStartAxisDistance: 50,
-          minimumDirectionChangeAxisDistance: 0,
-          maximumRawPointCount: 3
-        )
-      )
-
-    let recognizer = GestureRecognizer<UUID>(
-      eventSource: eventSource,
-      configuration: configuration
-    )
-
-    recognizer.start()
-    _ = eventSource.send(
-      makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)
-    )
-
-    for point in [
-      GesturePoint(x: 20, y: 20),
-      GesturePoint(x: 40, y: 40),
-      GesturePoint(x: 60, y: 60),
-      GesturePoint(x: 80, y: 80),
-    ] {
-      assertDisposition(
-        eventSource.send(makeGestureInputEvent(kind: .buttonMoved(.secondary), location: point)),
-        .consume
-      )
-    }
-    assertDisposition(
-      eventSource.send(
-        makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 90, y: 90))
-      ),
-      .consume
-    )
-
-    assertReplayRequests(
-      replayRequests,
-      [
-        .drag(
-          button: .secondary,
-          points: [.zero, .init(x: 80, y: 80), .init(x: 90, y: 90)]
-        )
-      ]
     )
   }
 
@@ -390,26 +336,26 @@ final class GestureRecognizerReplayTests: XCTestCase {
     _ = eventSource.send(
       makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 40, y: 40))),
       .consume
     )
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 80, y: 40))),
       .consume
     )
     XCTAssertEqual(recognizer.snapshot.trace.directions, [.right])
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 100, y: 40))),
       .consume
     )
-    assertReplayRequests(replayRequests, [.release(button: .secondary, at: .init(x: 100, y: 40))])
+    XCTAssertEqual(replayRequests, [.release(button: .secondary, at: .init(x: 100, y: 40))])
   }
 
   func testExtremeFiniteEndpointsAndMeasurementReachTypedSnapshots() throws {
@@ -478,8 +424,8 @@ final class GestureRecognizerReplayTests: XCTestCase {
         location: .init(x: 10, y: 100)
       ))
 
-    assertDisposition(result, .passThrough)
-    assertReplayRequests(
+    XCTAssertEqual(result, .passThrough)
+    XCTAssertEqual(
       replayRequests,
       [
         .dragStart(

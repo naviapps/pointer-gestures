@@ -25,7 +25,7 @@ final class GestureRecognizerTerminalInputTests: XCTestCase {
     let deadline = try XCTUnwrap(recognizer.nextDeadline)
 
     clock.now = deadline
-    assertDisposition(
+    XCTAssertEqual(
       source.send(
         makeGestureInputEvent(
           kind: .buttonUp(.secondary), location: .init(x: .nan, y: .infinity))),
@@ -34,7 +34,7 @@ final class GestureRecognizerTerminalInputTests: XCTestCase {
     XCTAssertEqual(recognizer.inputGeneration, generation)
     XCTAssertEqual(recognizer.nextDeadline, deadline)
     XCTAssertTrue(replays.isEmpty)
-    assertDisposition(
+    XCTAssertEqual(
       source.send(
         makeGestureInputEvent(
           kind: .buttonUp(.primary), location: .init(x: .nan, y: .infinity))),
@@ -44,7 +44,7 @@ final class GestureRecognizerTerminalInputTests: XCTestCase {
     XCTAssertEqual(recognizer.inputGeneration, 0)
     XCTAssertNil(recognizer.nextDeadline)
     recognizer.stop()
-    assertReplayRequests(replays, [.release(button: .primary, at: .init(x: 40, y: 0))])
+    XCTAssertEqual(replays, [.release(button: .primary, at: .init(x: 40, y: 0))])
   }
 
   func testTerminalEventsDeliverTypedRecoveryAndObserverUpdates() {
@@ -71,19 +71,19 @@ final class GestureRecognizerTerminalInputTests: XCTestCase {
         _ = source.send(
           makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 40, y: 0)))
       }
-      assertDisposition(
+      XCTAssertEqual(
         source.send(makeGestureInputEvent(kind: kind, location: .init(x: .nan, y: .infinity))),
         .consume)
       XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
       XCTAssertFalse(recognizer.snapshot.trace.isVisible)
       XCTAssertEqual(visibility, active ? [false, true, false] : [false, false])
       XCTAssertTrue(recognizer.snapshot.trace.discardsPendingPresentation)
-      assertReplayRequests(
+      XCTAssertEqual(
         replays,
         active
           ? [.release(button: .secondary, at: .init(x: 40, y: 0))]
           : [.click(button: .secondary, at: .zero)])
-      assertDisposition(
+      XCTAssertEqual(
         source.send(
           makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 80, y: 0))),
         .passThrough)

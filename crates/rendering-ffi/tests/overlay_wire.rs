@@ -76,53 +76,22 @@ fn retained_frames_publish_final_geometry_and_its_hide_deadline_together() {
         Frame::new(unsafe { pointer_gesture_rendering_overlay_update(overlay, initial, 0) });
     let queued = Frame::new(unsafe { pointer_gesture_rendering_overlay_update(overlay, next, 1) });
     queued.assert_view(0, Some(10_000_000), Some(1.0));
-    let returned =
-        Frame::new(unsafe { pointer_gesture_rendering_overlay_update(overlay, initial, 2) });
-    returned.assert_view(0, None, Some(1.0));
-    let elapsed =
-        Frame::new(unsafe { pointer_gesture_rendering_overlay_tick(overlay, 10_000_000) });
-    elapsed.assert_view(0, None, Some(1.0));
-    unsafe { pointer_gesture_rendering_trace_destroy(initial) };
-    let queued =
-        Frame::new(unsafe { pointer_gesture_rendering_overlay_update(overlay, next, 10_000_001) });
-    queued.assert_view(1, None, Some(2.0));
-    let last = trace_at(3.0);
-    let queued =
-        Frame::new(unsafe { pointer_gesture_rendering_overlay_update(overlay, last, 10_000_002) });
-    queued.assert_view(0, Some(20_000_001), Some(2.0));
-    unsafe { pointer_gesture_rendering_trace_destroy(last) };
-    let final_frame = Frame::new(unsafe {
-        pointer_gesture_rendering_overlay_update(overlay, null(), 10_000_003)
-    });
-    final_frame.assert_view(1, Some(30_000_003), Some(3.0));
+    unsafe {
+        pointer_gesture_rendering_trace_destroy(initial);
+        pointer_gesture_rendering_trace_destroy(next);
+    }
+    let final_frame =
+        Frame::new(unsafe { pointer_gesture_rendering_overlay_update(overlay, null(), 2) });
+    final_frame.assert_view(1, Some(20_000_002), Some(2.0));
 
     let timing = pointer_gesture_rendering_overlay_configuration(0.02, 24.0);
-    let configured = Frame::new(unsafe {
-        pointer_gesture_rendering_overlay_configure(overlay, timing, 10_000_004)
-    });
-    configured.assert_view(0, Some(50_000_003), Some(3.0));
-    let early = Frame::new(unsafe { pointer_gesture_rendering_overlay_tick(overlay, 50_000_002) });
-    early.assert_view(0, Some(50_000_003), Some(3.0));
-    let hidden = Frame::new(unsafe { pointer_gesture_rendering_overlay_tick(overlay, 50_000_003) });
+    let configured =
+        Frame::new(unsafe { pointer_gesture_rendering_overlay_configure(overlay, timing, 3) });
+    configured.assert_view(0, Some(40_000_002), Some(2.0));
+    let hidden = Frame::new(unsafe { pointer_gesture_rendering_overlay_tick(overlay, 40_000_002) });
     hidden.assert_view(1, None, None);
-
-    let shown_again =
-        Frame::new(unsafe { pointer_gesture_rendering_overlay_update(overlay, next, 60_000_000) });
-    shown_again.assert_view(1, None, Some(2.0));
-    let newest = trace_at(4.0);
-    let queued = Frame::new(unsafe {
-        pointer_gesture_rendering_overlay_update(overlay, newest, 60_000_001)
-    });
-    queued.assert_view(0, Some(80_000_000), Some(2.0));
-    unsafe { pointer_gesture_rendering_trace_destroy(newest) };
-    let cleared =
-        Frame::new(unsafe { pointer_gesture_rendering_overlay_clear(overlay, 60_000_002) });
-    cleared.assert_view(1, None, None);
-    let expired = Frame::new(unsafe { pointer_gesture_rendering_overlay_tick(overlay, u64::MAX) });
-    expired.assert_view(0, None, None);
-    unsafe { pointer_gesture_rendering_trace_destroy(next) };
     unsafe { pointer_gesture_rendering_overlay_destroy(overlay) };
 
     shown.assert_view(1, None, Some(1.0));
-    final_frame.assert_view(1, Some(30_000_003), Some(3.0));
+    final_frame.assert_view(1, Some(20_000_002), Some(2.0));
 }

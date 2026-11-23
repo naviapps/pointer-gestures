@@ -58,7 +58,7 @@ final class GestureRecognizerCancellationTests: XCTestCase {
 
     recognizer.cancelActiveGesture()
 
-    assertReplayRequests(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 10))])
+    XCTAssertEqual(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 10))])
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
   }
 
@@ -84,13 +84,13 @@ final class GestureRecognizerCancellationTests: XCTestCase {
 
     recognizer.cancelActiveGesture()
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 10, y: 10))
       ),
       .passThrough
     )
-    assertReplayRequests(replayRequests, [.click(button: .secondary, at: .init(x: 10, y: 10))])
+    XCTAssertEqual(replayRequests, [.click(button: .secondary, at: .init(x: 10, y: 10))])
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
   }
 
@@ -123,13 +123,13 @@ final class GestureRecognizerCancellationTests: XCTestCase {
 
     recognizer.cancelActiveGesture()
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 20, y: 10))
       ),
       .passThrough
     )
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [.click(button: .secondary, at: .init(x: 10, y: 10))]
     )

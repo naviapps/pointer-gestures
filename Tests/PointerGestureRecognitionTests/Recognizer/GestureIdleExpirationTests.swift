@@ -40,7 +40,7 @@ final class GestureIdleExpirationTests: XCTestCase {
         recognizer.snapshot.status.lastFailure == .gestureSessionExpired
       }
       XCTAssertEqual(matches, 0)
-      assertReplayRequests(
+      XCTAssertEqual(
         replays,
         [
           active
@@ -49,7 +49,7 @@ final class GestureIdleExpirationTests: XCTestCase {
         ])
       XCTAssertEqual(recognizer.inputGeneration, 0)
       XCTAssertFalse(recognizer.snapshot.trace.isVisible)
-      assertDisposition(
+      XCTAssertEqual(
         source.send(makeGestureInputEvent(kind: .buttonUp(.secondary), location: .zero)),
         .passThrough)
       recognizer.stop()

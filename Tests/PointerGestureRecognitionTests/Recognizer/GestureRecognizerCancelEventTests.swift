@@ -20,21 +20,21 @@ final class GestureRecognizerCancelEventTests: XCTestCase {
 
     recognizer.start()
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
       ),
       .consume
     )
-    assertDisposition(eventSource.send(makeCancelGestureInputEvent()), .consume)
-    assertDisposition(
+    XCTAssertEqual(eventSource.send(makeCancelGestureInputEvent()), .consume)
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 10, y: 10))
       ),
       .passThrough
     )
 
-    assertReplayRequests(replayRequests, [.click(button: .secondary, at: .init(x: 10, y: 10))])
+    XCTAssertEqual(replayRequests, [.click(button: .secondary, at: .init(x: 10, y: 10))])
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
   }
@@ -78,8 +78,8 @@ final class GestureRecognizerCancelEventTests: XCTestCase {
     XCTAssertTrue(recognizer.snapshot.status.isCapturingGesture)
 
     let result = eventSource.send(makeCancelGestureInputEvent())
-    assertDisposition(result, .consume)
-    assertReplayRequests(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 10))])
+    XCTAssertEqual(result, .consume)
+    XCTAssertEqual(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 10))])
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
     XCTAssertTrue(recognizer.snapshot.trace.rawPoints.isEmpty)
@@ -113,7 +113,7 @@ final class GestureRecognizerCancelEventTests: XCTestCase {
 
     _ = eventSource.send(
       makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10)))
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 10, y: 60))
       ),
@@ -123,15 +123,15 @@ final class GestureRecognizerCancelEventTests: XCTestCase {
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
     XCTAssertTrue(recognizer.snapshot.trace.directions.isEmpty)
 
-    assertDisposition(eventSource.send(makeCancelGestureInputEvent()), .passThrough)
-    assertDisposition(
+    XCTAssertEqual(eventSource.send(makeCancelGestureInputEvent()), .passThrough)
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 10, y: 60))
       ),
       .passThrough
     )
 
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [.dragStart(button: .secondary, points: [.init(x: 10, y: 10), .init(x: 10, y: 60)])]
     )
@@ -154,6 +154,6 @@ final class GestureRecognizerCancelEventTests: XCTestCase {
     recognizer.start()
 
     let result = eventSource.send(makeCancelGestureInputEvent())
-    assertDisposition(result, .passThrough)
+    XCTAssertEqual(result, .passThrough)
   }
 }

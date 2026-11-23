@@ -1,6 +1,6 @@
 # Pointer Gestures
 
-Private Navi Apps libraries for pointer gesture recognition and rendering. One
+Pointer gesture recognition and rendering libraries. One
 repository coordinates their shared contracts; the libraries remain independently
 consumable. Hosts own application commands, permission onboarding, product policy,
 persistence and style. Optional macOS and Windows adapters own overlay resources when selected.
@@ -49,7 +49,8 @@ The recognition/rendering packages under `crates` separately own portable logic,
 C ABI callers in `tests/c`, and Windows resources. Named .NET projects and tests
 live under `bindings/dotnet`; its `examples` directory is a runnable consumer.
 `bindings/web` owns the independent browser adapter and nested Rust workspace.
-Cross-language guides live in `docs`, and SDK build tools live in `tools`.
+Cross-language guides live in `docs`, and acceptance drivers live in
+`fixtures/distribution`.
 `Artifacts` and `ThirdParty` are retained consumer
 inputs; `.native-build` and `.web-build` are ignored developer output.
 
@@ -216,7 +217,7 @@ remain host-owned. See [Browser binding](https://github.com/naviapps/pointer-ges
 
 ## .NET usage
 
-Use the separate recognition/rendering packages from a private/local feed. Match
+Use the separate recognition and rendering packages from a local NuGet feed. Match
 managed code and native assets from the same build. SDK source checks and local
 packing do not publish a package feed or release.
 

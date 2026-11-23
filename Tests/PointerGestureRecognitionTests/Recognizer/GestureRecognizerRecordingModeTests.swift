@@ -29,7 +29,7 @@ final class GestureRecognizerRecordingModeTests: XCTestCase {
     let down = makeGestureInputEvent(
       kind: .buttonDown(.secondary), location: .init(x: 10, y: 10), modifiers: [])
     let result = eventSource.send(down)
-    assertDisposition(result, .consume)
+    XCTAssertEqual(result, .consume)
     XCTAssertNil(recognizer.snapshot.status.lastFailure)
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
   }
@@ -111,13 +111,13 @@ final class GestureRecognizerRecordingModeTests: XCTestCase {
     let disposition = eventSource.send(
       makeGestureInputEvent(kind: .buttonUp(.secondary), location: end))
 
-    assertDisposition(disposition, .consume)
+    XCTAssertEqual(disposition, .consume)
     let report = try XCTUnwrap(recognizer.snapshot.lastSessionReport)
     XCTAssertEqual(report.outcome, .recorded)
     XCTAssertEqual(report.directions, [.right])
     XCTAssertTrue(report.wasRecording)
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
-    assertReplayRequests(replayRequests, [.drag(button: .secondary, points: [start, moved, end])])
+    XCTAssertEqual(replayRequests, [.drag(button: .secondary, points: [start, moved, end])])
   }
 
   func testLastRecordedDirectionsRemainUntilNextGestureCompletes() {
@@ -281,7 +281,7 @@ final class GestureRecognizerRecordingModeTests: XCTestCase {
 
     XCTAssertEqual(makeMatcherCallCount, 0)
     XCTAssertEqual(recognizer.snapshot.status.lastRecordedDirections, [.right])
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [
         .drag(

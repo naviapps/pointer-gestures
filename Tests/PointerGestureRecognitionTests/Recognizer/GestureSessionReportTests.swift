@@ -23,12 +23,12 @@ final class GestureSessionReportTests: XCTestCase {
     recognizer.isRecordingModeEnabled = true
     recognizer.start()
     let original = GesturePoint(x: 30, y: 0)
-    assertDisposition(
+    XCTAssertEqual(
       source.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)), .consume)
     _ = source.send(makeGestureInputEvent(kind: .buttonMoved(.secondary), location: original))
     let originalGeneration = recognizer.inputGeneration
     let replacement = GesturePoint(x: 20, y: 40)
-    assertDisposition(
+    XCTAssertEqual(
       source.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: replacement)),
       .consume)
 
@@ -108,7 +108,7 @@ final class GestureSessionReportTests: XCTestCase {
     XCTAssertEqual(recovery.count, 1)
     if case .dragStart = recovery.first {} else { XCTFail("Expected held-input recovery") }
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
-    assertDisposition(
+    XCTAssertEqual(
       source.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 30, y: 30))),
       .passThrough)

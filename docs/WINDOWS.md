@@ -41,7 +41,7 @@ Windows binaries. The PE inspector's synthetic fixtures test malformed files,
 architecture, exports and dependencies; they are never shipped as DLLs.
 
 ```sh
-mise exec -- make check-windows check-tools
+mise exec -- make check-windows check-fixtures
 ```
 
 `make check-dotnet` separately

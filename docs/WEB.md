@@ -207,17 +207,17 @@ offline into an unrelated temporary client with an empty npm cache and lifecycle
 scripts disabled. The client imports the package by name, resolves its explicit Wasm
 and provenance exports, and executes recognition and rendering without a compiler or
 native-library search path. Every retained package output is checked after installation.
-The same installed client runs TypeScript 6.0.3 with `--noEmit` against the package
-name and its exported declarations. The compile-only fixture checks initialization,
-configuration, recognition results, rendering unions and structured pattern failures;
+The same installed client runs the TypeScript compiler pinned in `mise.toml` with
+`--noEmit` against the package name and its exported declarations. The compile-only
+fixture checks initialization, configuration, recognition results, rendering unions and structured pattern failures;
 seven `@ts-expect-error` cases require invalid inputs and unsafe result use to fail
 type checking. The fixture never executes. `make check-web-types` runs only the
 pack/install and static declaration checks against an existing generated package.
 Supply a different generated directory as the last argument to
 `node bindings/web/tests/web-consumer.mjs [--types-only]` when needed, or set `TSC_BIN` to the
-pinned compiler executable. These acceptance tools are developer prerequisites;
-the generated package ships no TypeScript compiler, and ordinary consumers only
-need the generated package and their JS host.
+compiler executable. The fixture records the compiler's reported version. These
+acceptance tools are developer prerequisites. Ordinary consumers only need the
+generated package and their JS host.
 
 ## Browser acceptance
 
@@ -226,23 +226,20 @@ the browser fixture using the runtimes pinned in `mise.toml`.
 
 ```sh
 evidence_dir="$(mktemp -d)"
-mise exec -- python3 -I -B .github/scripts/check-web-browser.py --artifacts "$evidence_dir"
+mise exec -- make check-web-browser BROWSER_ARTIFACTS="$evidence_dir"
 ```
 
 This checks `.web-build/package` and writes receipts, screenshots, traces and
 logs under `web-browser` in the evidence directory. GitHub Actions can choose a
 fresh path under `RUNNER_TEMP` for evidence. The browser runs headless.
 
-`make check-web-browser` also supports the prepared Node/npm runtimes of an
-owned macOS ARM64 CI guest. That invocation requires `RUNNER_TEMP`,
-`NAVI_CI_ARTIFACTS`, `NAVI_CI_TOOLS_ROOT` and an immutable `GITHUB_SHA` or
-`NAVI_CI_SOURCE_COMMIT`. It consumes `NAVI_CI_ARTIFACTS/web/package` after the Web
-build, or `POINTER_GESTURES_WEB_PACKAGE` when explicitly supplied. An older verified
-package additionally needs `POINTER_GESTURES_WEB_EXPECTED_SOURCE` and
-`POINTER_GESTURES_WEB_EXPECTED_PROVENANCE_SHA256`; the receipt distinguishes the
-fixture source from the SDK source. It verifies the complete installed package
-against its provenance and checksums, then serves only its installed JS/Wasm and
-the independent static fixture on `127.0.0.1`.
+Without `BROWSER_ARTIFACTS`, Make creates a temporary evidence directory and prints
+its path in the command. A previously verified SDK package can be checked by
+running `mise run sdk-tooling -- python -m fixtures.distribution.web_browser`
+with `--artifacts`, `--package`, `--source-revision` and `--provenance-sha256`.
+The receipt records the commits of the fixture and the SDK. The browser gate
+verifies the installed package against its provenance and checksums and serves its
+installed JS/Wasm and the independent static fixture on `127.0.0.1`.
 
 The flow under test is: independent page loads the installed SDK and colocated
 Wasm over HTTP, a trusted mouse drag moves down then right outside the canvas under
@@ -254,8 +251,7 @@ overlays, console/page/network health, capture/release events, recognition/repor
 state and Canvas pixels at 1000×760 and 390×844. Screenshots and traces support
 later visual inspection; pixel assertions do not replace that inspection.
 
-The Browser plugin is not available in this gate (`Browser plugin not available`),
-so it uses the official Playwright 1.65.0 package and Chromium 158.0.8127.18,
+The gate uses Playwright 1.65.0 and Chromium 158.0.8127.18,
 revision 1254, pinned by `bindings/web/tests/browser/package-lock.json` and the
 package's checked browser descriptor. The public npm integrity pins came from
 the [official registry](https://registry.npmjs.org/playwright/1.65.0); the browser
@@ -268,7 +264,7 @@ browser's new headless mode uses the full Chromium browser with `channel: "chrom
 No SDK compiler or native framework is used by the consumer. Each provisioning
 command and the browser flow have explicit time bounds, with no retries of failed
 acceptance. All logs, JSON receipts, six viewport/state screenshots and two traces
-are retained in `NAVI_CI_ARTIFACTS/web-browser`, outside the repository. A failure
+are retained under `web-browser` in the evidence directory. A failure
 during the browser flow additionally retains its screenshot and partial browser
 receipt; earlier provisioning failures retain their command log and summary.
 

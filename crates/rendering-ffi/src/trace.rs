@@ -45,7 +45,7 @@ pub unsafe extern "C" fn pointer_gesture_rendering_trace_from_snapshot(
         OverlayTrace::from_snapshot(
             unsafe { previous.as_ref() }.map(|handle| &handle.trace),
             true,
-            &unsafe { directions(data, count) }.ok()?,
+            unsafe { directions(data, count) }.ok()?,
             unsafe { buffer(points, point_count) }.ok()?,
             (tail_present == 1).then_some(tail),
         )
@@ -80,7 +80,7 @@ pub unsafe extern "C" fn pointer_gesture_rendering_trace_create(
             return None;
         }
         OverlayTrace::new(
-            &unsafe { directions(data, count) }.ok()?,
+            unsafe { directions(data, count) }.ok()?,
             unsafe { buffer(points, point_count) }.ok()?,
             (tail_present != 0).then_some(tail),
         )

@@ -144,21 +144,9 @@ internal static partial class NativeWindows
     [LibraryImport(Native.Library, EntryPoint = "pointer_gesture_recognition_windows_select_context")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial uint SelectContext(nint selection, MatcherHandle matcher, uint enabled, uint modifiers, ulong epoch);
-    [LibraryImport(Native.Library, EntryPoint = "pointer_gesture_recognition_windows_read")]
-    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    internal static partial uint Read(WindowsRecognizerHandle adapter, out nint frame, out WindowsError error);
     [LibraryImport(Native.Library, EntryPoint = "pointer_gesture_recognition_windows_read_with_context")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-    private static partial uint ReadWithContext(WindowsRecognizerHandle adapter, out nint frame, out NativeEpoch epoch, out WindowsError error);
-
-    internal static uint ReadContext(WindowsRecognizerHandle adapter, out nint frame, out NativeEpoch epoch, out WindowsError error)
-    {
-        try { return ReadWithContext(adapter, out frame, out epoch, out error); }
-        catch (EntryPointNotFoundException missing)
-        {
-            throw new NotSupportedException("This Windows input library does not expose contextual observations.", missing);
-        }
-    }
+    internal static partial uint ReadWithContext(WindowsRecognizerHandle adapter, out nint frame, out NativeEpoch epoch, out WindowsError error);
     [LibraryImport(Native.Library, EntryPoint = "pointer_gesture_recognition_windows_duplicate_notification_handle")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     internal static partial nint DuplicateNotificationHandle(WindowsRecognizerHandle adapter, out WindowsError error);

@@ -73,6 +73,8 @@ int main(void) {
     assert(invalid.code == 5 && invalid.geometry == NULL);
     invalid = pointer_gesture_rendering_pattern(NULL, 1, 96, 64, 8, 3.0, 1, 1.0);
     assert(invalid.code == 4 && invalid.geometry == NULL);
+    invalid = pointer_gesture_rendering_pattern(NULL, 0, 96, 64, 8, 3.0, 1, 1.0);
+    assert(invalid.code == 1 && invalid.geometry == NULL);
     for (int i = 0; i < 100; ++i) {
         uint32_t pattern[] = {1, 4, 2, 3};
         PointerGestureRenderingResult other =
@@ -140,6 +142,10 @@ int main(void) {
     assert(converted.trace != NULL && converted.reused_geometry == 1);
     assert(pointer_gesture_rendering_trace_view(converted.trace).points ==
            pointer_gesture_rendering_trace_view(retained).points);
+    right[0] = 3;
+    line[1].x = 12;
+    PointerGestureRenderingTraceView reused = pointer_gesture_rendering_trace_view(converted.trace);
+    assert(reused.directions[0] == 4 && reused.points[1].x == 1);
     PointerGestureRenderingTraceConversion hidden =
         pointer_gesture_rendering_trace_from_snapshot(retained, 0, NULL, 1, NULL, 2, tail, 1);
     assert(hidden.trace == NULL && hidden.reused_geometry == 0);

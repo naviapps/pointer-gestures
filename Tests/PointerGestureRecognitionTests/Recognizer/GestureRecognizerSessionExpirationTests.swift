@@ -33,7 +33,7 @@ final class GestureRecognizerSessionExpirationTests: XCTestCase {
     }
 
     XCTAssertEqual(recognizer.snapshot.status.lastFailure, .gestureSessionExpired)
-    assertReplayRequests(replayRequests, [.release(button: .secondary, at: .init(x: 30, y: 10))])
+    XCTAssertEqual(replayRequests, [.release(button: .secondary, at: .init(x: 30, y: 10))])
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
     XCTAssertTrue(recognizer.snapshot.trace.rawPoints.isEmpty)
@@ -66,7 +66,7 @@ final class GestureRecognizerSessionExpirationTests: XCTestCase {
     }
 
     XCTAssertNil(recognizer.snapshot.status.lastFailure)
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [.dragStart(button: .secondary, points: [.init(x: 10, y: 10), .init(x: 30, y: 10)])]
     )
@@ -86,7 +86,7 @@ final class GestureRecognizerSessionExpirationTests: XCTestCase {
     )
 
     recognizer.start()
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
       ),
@@ -102,13 +102,13 @@ final class GestureRecognizerSessionExpirationTests: XCTestCase {
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 10, y: 10))
       ),
       .passThrough
     )
-    assertReplayRequests(replayRequests, [.click(button: .secondary, at: .init(x: 10, y: 10))])
+    XCTAssertEqual(replayRequests, [.click(button: .secondary, at: .init(x: 10, y: 10))])
   }
 
   func testMovedPendingButtonInputBelowStartDistanceExpirationReplaysClickAndClearsInput() async {
@@ -124,13 +124,13 @@ final class GestureRecognizerSessionExpirationTests: XCTestCase {
     )
 
     recognizer.start()
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
       ),
       .consume
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 19, y: 10))
       ),
@@ -146,13 +146,13 @@ final class GestureRecognizerSessionExpirationTests: XCTestCase {
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 20, y: 10))
       ),
       .passThrough
     )
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [.click(button: .secondary, at: .init(x: 10, y: 10))]
     )
@@ -180,7 +180,7 @@ final class GestureRecognizerSessionExpirationTests: XCTestCase {
       recognizer.snapshot.status.lastFailure == .gestureSessionExpired
     }
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 40, y: 10))
       ),
@@ -237,7 +237,7 @@ final class GestureRecognizerSessionExpirationTests: XCTestCase {
     _ = eventSource.send(
       makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 30, y: 10))
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 30, y: 10))
       ),
@@ -250,7 +250,7 @@ final class GestureRecognizerSessionExpirationTests: XCTestCase {
 
     XCTAssertNil(recognizer.snapshot.status.lastFailure)
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [.release(button: .secondary, at: .init(x: 30, y: 10))]
     )

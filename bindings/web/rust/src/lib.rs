@@ -3,8 +3,9 @@
 #![warn(missing_docs)]
 
 use pointer_gesture_recognition::{
-    Configuration, Direction, Effect, Engine, Event, Failure, InputStage, Matcher, Output, Point,
-    SessionReport, Trace,
+    Configuration, Direction, Effect, Engine, Event, Failure, InputStage, Matcher, Output,
+    PatternError, Point, SessionReport, Trace, validate_direction_limit,
+    validate_pattern as validate_runs,
 };
 use pointer_gesture_rendering::{Command, CornerStyle, Path, live_trace, pattern};
 #[cfg(feature = "web")]
@@ -12,9 +13,8 @@ use wasm_bindgen::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 struct PatternValidation(u32, u32);
-impl From<pointer_gesture_recognition::PatternError> for PatternValidation {
-    fn from(error: pointer_gesture_recognition::PatternError) -> Self {
-        use pointer_gesture_recognition::PatternError;
+impl From<PatternError> for PatternValidation {
+    fn from(error: PatternError) -> Self {
         match error {
             PatternError::Empty => Self(1, u32::MAX),
             PatternError::TooLong => Self(2, u32::MAX),
@@ -24,10 +24,10 @@ impl From<pointer_gesture_recognition::PatternError> for PatternValidation {
 }
 fn pattern_input(values: &[u8]) -> Result<Vec<Direction>, PatternValidation> {
     if values.is_empty() {
-        return Err(PatternValidation(1, u32::MAX));
+        return Err(PatternError::Empty.into());
     }
-    if values.len() > 4096 {
-        return Err(PatternValidation(2, u32::MAX));
+    if !validate_direction_limit(values.len()) {
+        return Err(PatternError::TooLong.into());
     }
     values
         .iter()
@@ -44,9 +44,9 @@ fn pattern_result(result: Result<(), PatternValidation>) -> Vec<u32> {
 /// Structured validation: code and zero-based index, u32::MAX when absent.
 #[cfg_attr(feature = "web", wasm_bindgen(js_name = rawValidatePattern))]
 pub fn validate_pattern(values: &[u8]) -> Vec<u32> {
-    pattern_result(pattern_input(values).and_then(|pattern| {
-        pointer_gesture_recognition::validate_pattern(&pattern).map_err(Into::into)
-    }))
+    pattern_result(
+        pattern_input(values).and_then(|pattern| validate_runs(&pattern).map_err(Into::into)),
+    )
 }
 
 fn directions(values: &[u8]) -> Result<Vec<Direction>, String> {
@@ -82,6 +82,26 @@ fn duration_ms(value: f64) -> Result<u64, String> {
     Ok(pointer_gesture_recognition::duration_nanoseconds(
         value / 1_000.,
     ))
+}
+
+fn configuration(
+    start_distance: f64,
+    change_distance: f64,
+    maximum_points: u32,
+    maximum_directions: u32,
+    total_ms: f64,
+    idle_ms: f64,
+) -> Result<Configuration, String> {
+    Ok(Configuration {
+        start_distance,
+        change_distance,
+        total_duration_ns: duration_ms(total_ms)?,
+        idle_duration_ns: duration_ms(idle_ms)?,
+        maximum_points: maximum_points as usize,
+        maximum_directions: maximum_directions as usize,
+        button: 0,
+        passes_through_empty_matcher: true,
+    })
 }
 
 /// Owned, copied result. The JavaScript adapter frees this after decoding its values.
@@ -181,11 +201,11 @@ impl RawSessionReport {
 
 #[cfg_attr(feature = "web", wasm_bindgen)]
 impl RawUpdate {
-    /// Last completed retained session. Its generation distinguishes a new completion.
-    #[cfg_attr(feature = "web", wasm_bindgen(js_name = lastSession))]
-    pub fn last_session(&self) -> Option<RawSessionReport> {
+    /// Transfer the report for the JavaScript adapter to copy and free.
+    #[cfg_attr(feature = "web", wasm_bindgen(js_name = takeLastSession))]
+    pub fn take_last_session(&mut self) -> Option<RawSessionReport> {
         self.last_session
-            .clone()
+            .take()
             .map(|report| RawSessionReport { report })
     }
     /// Host-registered identifier, present only on a successfully completed match.
@@ -213,9 +233,10 @@ impl RawUpdate {
     pub fn expired(&self) -> bool {
         self.expired
     }
-    /// Independent geometry snapshot; absent when no trace should be presented.
-    pub fn trace(&self) -> Option<RawTrace> {
-        self.trace.clone().map(|trace| RawTrace { trace })
+    /// Transfer an independent trace for the JavaScript adapter to copy and free.
+    #[cfg_attr(feature = "web", wasm_bindgen(js_name = takeTrace))]
+    pub fn take_trace(&mut self) -> Option<RawTrace> {
+        self.trace.take().map(|trace| RawTrace { trace })
     }
 }
 
@@ -241,16 +262,14 @@ impl RawSession {
         idle_ms: f64,
         recording: bool,
     ) -> Result<Self, String> {
-        let mut engine = Engine::new(Configuration {
-            start_distance: start,
-            change_distance: change,
-            total_duration_ns: duration_ms(total_ms)?,
-            idle_duration_ns: duration_ms(idle_ms)?,
-            maximum_points: maximum_points as usize,
-            maximum_directions: maximum_directions as usize,
-            button: 0,
-            passes_through_empty_matcher: true,
-        })
+        let mut engine = Engine::new(configuration(
+            start,
+            change,
+            maximum_points,
+            maximum_directions,
+            total_ms,
+            idle_ms,
+        )?)
         .map_err(|error| error.to_string())?;
         engine.step(Event::Start, 0);
         engine.step(Event::Recording(recording), 0);
@@ -295,7 +314,7 @@ impl RawSession {
     /// Record arbitrary patterns for future strokes without requiring matcher prefixes.
     /// Active input retains its captured mode, just as in the native engine.
     pub fn set_recording(&mut self, enabled: bool, now_ms: f64) -> Result<RawUpdate, String> {
-        self.process(Event::Recording(enabled), now_ms, false)
+        self.process(Event::Recording(enabled), now_ms)
     }
 
     /// Apply shared mutable tuning atomically and return the next deadline.
@@ -315,32 +334,27 @@ impl RawSession {
         now_ms: f64,
         reset_unchanged: bool,
     ) -> Result<RawUpdate, String> {
-        let now = duration_ms(now_ms)?;
-        if now < self.last_time {
-            return Err("Pointer timestamps must be monotonic".into());
-        }
-        let config = Configuration {
-            start_distance: start,
-            change_distance: change,
-            total_duration_ns: duration_ms(total_ms)?,
-            idle_duration_ns: duration_ms(idle_ms)?,
-            maximum_points: maximum_points as usize,
-            maximum_directions: maximum_directions as usize,
-            button: 0,
-            passes_through_empty_matcher: true,
-        };
+        let now = self.validated_time(now_ms)?;
+        let config = configuration(
+            start,
+            change,
+            maximum_points,
+            maximum_directions,
+            total_ms,
+            idle_ms,
+        )?;
         self.engine
             .update_tuning(config, now, reset_unchanged)
             .map_err(|e| e.to_string())?;
         self.last_time = now;
         let output = self.engine.step(Event::Snapshot, now);
-        Ok(self.decode(output, false))
+        Ok(self.project(output, false))
     }
 
     /// Begin pointer input. Pointer capture and browser event suppression belong to the host.
     pub fn begin(&mut self, x: f64, y: f64, now_ms: f64) -> Result<RawUpdate, String> {
         let point = finite_point(x, y)?;
-        self.process(Event::Down { button: 0, point }, now_ms, false)
+        self.process(Event::Down { button: 0, point }, now_ms)
     }
     /// Advance held input and return the current shared geometry.
     pub fn moved(&mut self, x: f64, y: f64, now_ms: f64) -> Result<RawUpdate, String> {
@@ -350,7 +364,6 @@ impl RawSession {
                 point: finite_point(x, y)?,
             },
             now_ms,
-            false,
         )
     }
     /// Complete input while preserving the final visible publication before native hiding.
@@ -362,66 +375,59 @@ impl RawSession {
                 point: Point { x, y },
             },
             now_ms,
-            true,
         )
     }
     /// Cancel without returning a match or reviving discarded geometry.
     pub fn cancel(&mut self, now_ms: f64) -> Result<RawUpdate, String> {
-        self.process(Event::Cancel, now_ms, false)
+        self.process(Event::Cancel, now_ms)
     }
     /// Expire shared total/idle deadlines without physical input.
     pub fn tick(&mut self, now_ms: f64) -> Result<RawUpdate, String> {
-        self.process(Event::Tick, now_ms, false)
+        self.process(Event::Tick, now_ms)
     }
 }
 
 impl RawSession {
-    fn process(&mut self, event: Event, now_ms: f64, complete: bool) -> Result<RawUpdate, String> {
+    fn validated_time(&self, now_ms: f64) -> Result<u64, String> {
         let now = duration_ms(now_ms)?;
         if now < self.last_time {
             return Err("Pointer timestamps must be monotonic".into());
         }
-        if matches!(event, Event::Down { .. }) {
-            self.last_visible = None;
-        }
-        self.last_time = now;
-        let output = self.engine.step(event, now);
-        Ok(self.decode(output, complete))
+        Ok(now)
     }
 
-    fn decode(&mut self, output: Output, complete: bool) -> RawUpdate {
-        if output.discard_pending_visible_trace {
-            self.last_visible = None;
-        }
+    fn process(&mut self, event: Event, now_ms: f64) -> Result<RawUpdate, String> {
+        let now = self.validated_time(now_ms)?;
+        let released = matches!(event, Event::Up { .. });
+        self.last_time = now;
+        let output = self.engine.step(event, now);
+        Ok(self.project(output, released))
+    }
+
+    fn project(&mut self, output: Output, released: bool) -> RawUpdate {
+        let completed = released && !output.status.recorded_directions.is_empty();
         let mut matched = None;
-        // A completed event publishes its final trace and then hides it. Keep the
-        // final visible geometry only for this completion, never across cancellation.
-        for effect in &output.effects {
+        let mut final_trace = None;
+        for effect in output.effects {
             match effect {
-                Effect::Publish { trace, .. } if trace.visible => {
-                    self.last_visible = Some(trace.clone());
+                Effect::Publish { trace, .. } if completed && trace.visible => {
+                    final_trace = Some(trace)
                 }
-                Effect::Match(identifier) => matched = Some(*identifier as u32),
+                Effect::Match(identifier) => matched = Some(identifier as u32),
                 _ => {}
             }
         }
-        if output.trace.visible {
+        let trace = if output.trace.visible {
             self.last_visible = Some(output.trace.clone());
-        }
-        let trace = if output.trace.visible
-            || (complete && !output.status.recorded_directions.is_empty())
-        {
-            self.last_visible.as_ref()
+            Some(output.trace)
         } else {
-            None
+            // An unchanged release can hide the trace without publishing it again.
+            let previous = self.last_visible.take();
+            final_trace.or(previous.filter(|_| completed && !output.discard_pending_visible_trace))
         };
-        let trace = trace.filter(|t| !t.directions.is_empty()).cloned();
-        if !output.trace.visible {
-            self.last_visible = None;
-        }
         RawUpdate {
             matched,
-            trace,
+            trace: trace.filter(|trace| !trace.directions.is_empty()),
             active: output.stage != InputStage::Idle,
             deadline_ms: output.deadline_ns.map(|time| time as f64 / 1_000_000.),
             discard_pending_visible_trace: output.discard_pending_visible_trace,
@@ -479,13 +485,15 @@ pub struct RawPattern {
 
 #[cfg_attr(feature = "web", wasm_bindgen)]
 impl RawPattern {
-    /// Encoded preview shaft commands.
-    pub fn commands(&self) -> Vec<f64> {
-        self.path.clone()
+    /// Transfer encoded preview shaft commands to the JavaScript adapter.
+    #[cfg_attr(feature = "web", wasm_bindgen(js_name = takeCommands))]
+    pub fn take_commands(&mut self) -> Vec<f64> {
+        std::mem::take(&mut self.path)
     }
-    /// Encoded closed arrowhead commands, empty when no head fits or is requested.
-    pub fn arrowhead(&self) -> Vec<f64> {
-        self.arrowhead.clone()
+    /// Transfer encoded closed arrowhead commands, if the preview has one.
+    #[cfg_attr(feature = "web", wasm_bindgen(js_name = takeArrowhead))]
+    pub fn take_arrowhead(&mut self) -> Vec<f64> {
+        std::mem::take(&mut self.arrowhead)
     }
 }
 
@@ -524,32 +532,12 @@ pub fn raw_pattern(
 mod tests {
     use super::*;
 
-    impl RawUpdate {
-        fn planned_commands(&self) -> Vec<f64> {
-            self.trace()
-                .map(|t| raw_live_trace(&t.directions(), &t.points(), &t.tail(), 1.).unwrap())
-                .unwrap_or_default()
-        }
-        fn trace_directions(&self) -> Vec<u8> {
-            self.trace().map(|t| t.directions()).unwrap_or_default()
-        }
-    }
-
     fn session() -> RawSession {
         RawSession::new(10., 25., 256, 64, 1_000., 0., false).unwrap()
     }
 
     #[test]
     fn final_match_keeps_the_final_geometry_after_native_hide() {
-        let mut session = session();
-        assert_eq!(session.register(&[2, 4], 7)[0], 0);
-        session.begin(30., 35., 0.).unwrap();
-        session.moved(30., 100., 10.).unwrap();
-        session.moved(100., 100., 20.).unwrap();
-        let result = session.end(150., 100., 30.).unwrap();
-        assert_eq!(result.matched(), Some(7));
-        assert_eq!(result.trace_directions(), vec![2, 4]);
-        assert!(!result.active());
         let expected = live_trace(
             &[Direction::Down, Direction::Right],
             &[
@@ -561,8 +549,23 @@ mod tests {
             CornerStyle::default(),
         )
         .unwrap();
-        assert_eq!(result.planned_commands(), commands(&expected));
-        assert!(result.planned_commands().contains(&3.));
+        // Aligned moves leave the final release unchanged when enough samples
+        // have already been published. Both paths must return terminal geometry.
+        for previous_x in [100., 150.] {
+            let mut session = session();
+            assert_eq!(session.register(&[2, 4], 7)[0], 0);
+            session.begin(30., 35., 0.).unwrap();
+            session.moved(30., 100., 10.).unwrap();
+            session.moved(previous_x, 100., 20.).unwrap();
+            let mut result = session.end(150., 100., 30.).unwrap();
+            assert_eq!(result.matched(), Some(7));
+            assert!(!result.active());
+            let trace = result.take_trace().unwrap();
+            assert_eq!(
+                raw_live_trace(&trace.directions(), &trace.points(), &trace.tail(), 1.).unwrap(),
+                commands(&expected),
+            );
+        }
     }
 
     #[test]
@@ -584,16 +587,10 @@ mod tests {
             } else {
                 30.
             };
-            let result = session.process(event, time, false).unwrap();
+            let result = session.process(event, time).unwrap();
             assert_eq!(result.matched(), None);
-            assert!(result.planned_commands().is_empty());
-            assert!(
-                session
-                    .end(80., 120., time + 1.)
-                    .unwrap()
-                    .planned_commands()
-                    .is_empty()
-            );
+            assert!(result.trace.is_none());
+            assert!(session.end(80., 120., time + 1.).unwrap().trace.is_none());
         }
     }
 
@@ -610,7 +607,7 @@ mod tests {
         assert!(session.begin(0., 0., 49.).is_err());
         let completed = session.end(0., 80., 60.).unwrap();
         assert_eq!(completed.matched(), Some(u32::MAX));
-        assert!(!completed.planned_commands().is_empty());
+        assert!(completed.trace.is_some());
     }
 
     #[test]
@@ -636,7 +633,7 @@ mod tests {
 
     #[test]
     fn arbitrary_preview_delegates_to_the_existing_planner() {
-        let result = raw_pattern(&[2, 4, 1, 3], 440., 240., 8., 4., true, 1.).unwrap();
+        let mut result = raw_pattern(&[2, 4, 1, 3], 440., 240., 8., 4., true, 1.).unwrap();
         let expected = pattern(
             &[
                 Direction::Down,
@@ -652,9 +649,9 @@ mod tests {
             1.,
         )
         .unwrap();
-        assert_eq!(result.commands(), commands(&expected.path));
+        assert_eq!(result.take_commands(), commands(&expected.path));
         assert_eq!(
-            result.arrowhead(),
+            result.take_arrowhead(),
             commands(expected.arrowhead.as_ref().unwrap())
         );
     }
@@ -676,8 +673,7 @@ mod tests {
             assert_eq!(ended.matched(), None);
             assert!(ended.discard_pending_visible_trace());
             assert_eq!(ended.deadline_ms(), None);
-            assert!(ended.planned_commands().is_empty());
-            assert!(ended.trace_directions().is_empty());
+            assert!(ended.trace.is_none());
             assert_eq!(session.end(80., 0., 14.).unwrap().matched(), None);
             session.begin(0., 0., 15.).unwrap();
             session.moved(40., 0., 16.).unwrap();

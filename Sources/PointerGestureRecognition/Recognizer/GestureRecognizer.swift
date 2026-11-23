@@ -170,7 +170,7 @@ public final class GestureRecognizer<Match: Sendable> {
       if enabled && modifiers && !isRecordingModeEnabled {
         let matcher = configuration.makeMatcher(context)
         guard epoch == operation, isReady else { return .passThrough }
-        _ = core.useMatcher(matcher)
+        core.useMatcher(matcher)
       }
       _ = deliver(kind: 8, value: (enabled ? 1 : 0) | (modifiers ? 2 : 0))
       return deliver(kind: 1, point: event.location) == 1 ? .consume : .passThrough

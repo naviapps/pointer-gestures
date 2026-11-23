@@ -31,13 +31,13 @@ final class GestureRecognizerBasicUsageTests: XCTestCase {
     }
 
     recognizer.start()
-    assertDisposition(send(.buttonDown(.secondary), at: .zero), .consume)
-    assertDisposition(send(.buttonMoved(.secondary), at: .init(x: 0, y: 40)), .consume)
-    assertDisposition(send(.buttonMoved(.secondary), at: .init(x: 40, y: 40)), .consume)
-    assertDisposition(send(.buttonUp(.secondary), at: .init(x: 40, y: 40)), .consume)
+    XCTAssertEqual(send(.buttonDown(.secondary), at: .zero), .consume)
+    XCTAssertEqual(send(.buttonMoved(.secondary), at: .init(x: 0, y: 40)), .consume)
+    XCTAssertEqual(send(.buttonMoved(.secondary), at: .init(x: 40, y: 40)), .consume)
+    XCTAssertEqual(send(.buttonUp(.secondary), at: .init(x: 40, y: 40)), .consume)
 
     XCTAssertEqual(matchedCommands, [.showInspector])
-    assertReplayRequests(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 40))])
+    XCTAssertEqual(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 40))])
   }
 
   func testRecognizerPassesThroughNonFiniteInputWithoutStartingState() {
@@ -59,7 +59,7 @@ final class GestureRecognizerBasicUsageTests: XCTestCase {
       )
     )
 
-    assertDisposition(disposition, .passThrough)
+    XCTAssertEqual(disposition, .passThrough)
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
   }

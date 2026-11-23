@@ -14,7 +14,8 @@ let package = Package(
     .executableTarget(
       name: "RecognitionMacOSConsumer",
       dependencies: [
-        .product(name: "PointerGestureRecognitionMacOS", package: "pointer-gestures")
+        .product(name: "PointerGestureRecognitionMacOS", package: "pointer-gestures"),
+        .product(name: "PointerGestureRecognition", package: "pointer-gestures"),
       ]),
     .executableTarget(
       name: "RenderingConsumer",
@@ -24,7 +25,8 @@ let package = Package(
     .executableTarget(
       name: "RenderingSwiftUIConsumer",
       dependencies: [
-        .product(name: "PointerGestureRenderingSwiftUI", package: "pointer-gestures")
+        .product(name: "PointerGestureRenderingSwiftUI", package: "pointer-gestures"),
+        .product(name: "PointerGestureRendering", package: "pointer-gestures"),
       ]),
     .executableTarget(
       name: "RenderingMacOSConsumer",

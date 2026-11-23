@@ -29,8 +29,6 @@ struct Input {
     point_count: u64,
     maximum_axis_distance: f64,
     direction_limit: usize,
-    rejection: Option<SessionOutcome>,
-    rejected_direction: Option<Direction>,
     // None is pending input; Some is a valid capturing session. Abandoned input
     // is replayed and removed in the same step instead of persisting flag states.
     capture: Option<Capture>,
@@ -49,7 +47,12 @@ impl Input {
             .min(f64::MAX);
         self.maximum_axis_distance = self.maximum_axis_distance.max(distance);
     }
-    fn report(&self, outcome: SessionOutcome, now: u64) -> SessionReport {
+    fn report(
+        &self,
+        outcome: SessionOutcome,
+        now: u64,
+        rejected_direction: Option<Direction>,
+    ) -> SessionReport {
         SessionReport {
             generation: self.generation,
             outcome,
@@ -63,7 +66,7 @@ impl Input {
                 .capture
                 .as_ref()
                 .map_or_else(Arc::default, |c| Arc::from(c.directions.as_slice())),
-            rejected_direction: self.rejected_direction,
+            rejected_direction,
         }
     }
 }
@@ -238,7 +241,7 @@ impl Engine {
     fn interrupt(&mut self, outcome: SessionOutcome, now: u64) {
         self.discard_visible = true;
         if let Some(i) = self.input.take() {
-            self.last_session = Some(i.report(outcome, now));
+            self.last_session = Some(i.report(outcome, now, None));
             if let Some(capture) = &i.capture {
                 self.release(*capture.raw.last().unwrap_or(&i.start));
             } else {
@@ -256,26 +259,11 @@ impl Engine {
         true
     }
     fn expire(&mut self, now: u64) {
-        if self
-            .input
-            .as_ref()
-            .and_then(|i| self.deadline(i))
-            .is_some_and(|deadline| now >= deadline)
+        if let Some((deadline, outcome)) =
+            self.input.as_ref().and_then(|input| self.deadline(input))
+            && now >= deadline
         {
             self.failure = Some(Failure::Expired);
-            let input = self.input.as_ref().unwrap();
-            let total = (self.config.total_duration_ns > 0)
-                .then(|| input.started.saturating_add(self.config.total_duration_ns));
-            let idle = (self.config.idle_duration_ns > 0).then(|| {
-                input
-                    .last_moved
-                    .saturating_add(self.config.idle_duration_ns)
-            });
-            let outcome = if total.is_some_and(|total| idle.is_none_or(|idle| total <= idle)) {
-                SessionOutcome::TotalDeadline
-            } else {
-                SessionOutcome::IdleDeadline
-            };
             self.interrupt(outcome, now);
         }
     }
@@ -291,9 +279,13 @@ impl Engine {
             points.drain(1..1 + points.len() - maximum);
         }
     }
-    // Returns false for rejected prefixes or a full direction budget. The caller restores the drag start
-    // and drops input immediately, leaving the real button-up to pass through.
-    fn advance(&mut self, input: &mut Input, point: Point, immediate: bool) -> bool {
+    // A rejected turn ends the retained input; the caller selects the recovery effect.
+    fn advance(
+        &self,
+        input: &mut Input,
+        point: Point,
+        immediate: bool,
+    ) -> Result<(), (SessionOutcome, Direction)> {
         let capture = input
             .capture
             .as_mut()
@@ -303,7 +295,7 @@ impl Engine {
                 capture.unpublished_count = 0;
                 capture.published = Arc::from(capture.raw.as_slice());
             }
-            return true;
+            return Ok(());
         }
         self.append(&mut input.points, point);
         capture.raw.push(point);
@@ -322,17 +314,11 @@ impl Engine {
                 *capture.endpoints.last_mut().unwrap() = point;
             } else if capture.directions.is_empty() || distance >= self.config.change_distance {
                 if capture.directions.len() >= input.direction_limit {
-                    input.rejection = Some(SessionOutcome::DirectionLimit);
-                    input.rejected_direction = Some(direction);
-                    self.discard_visible = true;
-                    return false;
+                    return Err((SessionOutcome::DirectionLimit, direction));
                 }
                 let cursor = input.matcher.advance(input.cursor, direction);
                 if !input.recording && cursor.is_none() {
-                    input.rejection = Some(SessionOutcome::UnmatchedPrefix);
-                    input.rejected_direction = Some(direction);
-                    self.discard_visible = true;
-                    return false;
+                    return Err((SessionOutcome::UnmatchedPrefix, direction));
                 }
                 input.cursor = cursor;
                 capture.directions.push(direction);
@@ -344,7 +330,17 @@ impl Engine {
             capture.unpublished_count = 0;
             capture.published = Arc::from(capture.raw.as_slice());
         }
-        true
+        Ok(())
+    }
+    fn reject_turn(
+        &mut self,
+        input: &Input,
+        (outcome, direction): (SessionOutcome, Direction),
+        now: u64,
+    ) {
+        self.last_session = Some(input.report(outcome, now, Some(direction)));
+        self.discard_visible = true;
+        self.publish_trace(None);
     }
     /// End retained input before a replacement press whose policy needs host callbacks.
     /// Deliver the returned recovery before resolving that policy and submitting
@@ -478,8 +474,6 @@ impl Engine {
             point_count: 1,
             maximum_axis_distance: 0.0,
             direction_limit: self.config.maximum_directions,
-            rejection: None,
-            rejected_direction: None,
             capture: None,
         });
         Disposition::Consume
@@ -517,9 +511,8 @@ impl Engine {
             self.input = Some(input);
             return Disposition::Consume;
         }
-        if !self.advance(&mut input, point, false) {
-            self.last_session = Some(input.report(input.rejection.unwrap(), now));
-            self.publish_trace(None);
+        if let Err(rejection) = self.advance(&mut input, point, false) {
+            self.reject_turn(&input, rejection, now);
             self.effects.push(Effect::DragStart {
                 button: self.config.button,
                 points: Arc::from(input.points.as_slice()),
@@ -541,14 +534,13 @@ impl Engine {
         }
         input.observe(point, now);
         if input.capture.is_none() {
-            self.last_session = Some(input.report(SessionOutcome::BelowThreshold, now));
+            self.last_session = Some(input.report(SessionOutcome::BelowThreshold, now, None));
             self.append(&mut input.points, point);
             self.pending_replay(input);
             return Disposition::Consume;
         }
-        if !self.advance(&mut input, point, true) {
-            self.last_session = Some(input.report(input.rejection.unwrap(), now));
-            self.publish_trace(None);
+        if let Err(rejection) = self.advance(&mut input, point, true) {
+            self.reject_turn(&input, rejection, now);
             self.recorded = Arc::default();
             self.consumed(&input.points, input.start);
             return Disposition::Consume;
@@ -572,6 +564,7 @@ impl Engine {
                 SessionOutcome::Unmatched
             },
             now,
+            None,
         ));
         self.publish_trace(None);
         if matched.is_none() {
@@ -584,8 +577,8 @@ impl Engine {
         }
         Disposition::Consume
     }
-    // Report and test the same absolute deadline, including saturation at u64::MAX.
-    fn deadline(&self, input: &Input) -> Option<u64> {
+    // Both publication and expiration use the same deadline. Total duration wins ties.
+    fn deadline(&self, input: &Input) -> Option<(u64, SessionOutcome)> {
         let total = (self.config.total_duration_ns > 0)
             .then(|| input.started.saturating_add(self.config.total_duration_ns));
         let idle = (self.config.idle_duration_ns > 0).then(|| {
@@ -594,8 +587,9 @@ impl Engine {
                 .saturating_add(self.config.idle_duration_ns)
         });
         match (total, idle) {
-            (Some(total), Some(idle)) => Some(total.min(idle)),
-            (Some(value), None) | (None, Some(value)) => Some(value),
+            (Some(total), Some(idle)) if idle < total => Some((idle, SessionOutcome::IdleDeadline)),
+            (Some(total), _) => Some((total, SessionOutcome::TotalDeadline)),
+            (None, Some(idle)) => Some((idle, SessionOutcome::IdleDeadline)),
             (None, None) => None,
         }
     }
@@ -607,7 +601,11 @@ impl Engine {
                 InputStage::Pending
             }
         });
-        let deadline_ns = self.input.as_ref().and_then(|i| self.deadline(i));
+        let deadline_ns = self
+            .input
+            .as_ref()
+            .and_then(|input| self.deadline(input))
+            .map(|(deadline, _)| deadline);
         Output {
             last_session: self.last_session.clone(),
             disposition,

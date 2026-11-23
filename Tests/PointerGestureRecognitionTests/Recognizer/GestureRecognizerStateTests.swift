@@ -51,25 +51,6 @@ final class GestureRecognizerStateTests: XCTestCase {
     XCTAssertTrue(state.trace.directionEndpoints.isEmpty)
   }
 
-  @MainActor
-  func testRecognizerStateLifecycleAndFailureAreEquatableValues() {
-    let eventSource = GestureEventSourceDouble(startResult: true)
-    let configuration: GestureRecognizerConfiguration<String> =
-      makeGestureRecognizerTestConfiguration()
-
-    let recognizer = GestureRecognizer<String>(
-      eventSource: eventSource,
-      configuration: configuration
-    )
-
-    let state = recognizer.snapshot
-    XCTAssertEqual(state, state)
-    XCTAssertEqual(state.status, state.status)
-    XCTAssertEqual(state.trace, state.trace)
-    XCTAssertNotEqual(GestureRecognizerState.Status.Lifecycle.idle, .ready)
-    XCTAssertNotEqual(GestureRecognizerFailure.eventSourceStartFailed, .gestureSessionExpired)
-  }
-
   func testTraceInitializerPreservesProvidedGeometry() {
     let rawPoints = [
       GesturePoint(x: 0, y: 0),

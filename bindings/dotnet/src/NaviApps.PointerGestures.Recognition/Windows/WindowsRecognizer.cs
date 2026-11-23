@@ -95,11 +95,9 @@ public sealed class WindowsRecognizer : IDisposable
     /// Native hooks never wait for the consumer. Host command execution belongs after this call.</summary>
     public bool TryRead([NotNullWhen(true)] out GestureRecognitionOutput? output)
     {
-        lock (GuardedGate)
-        {
-            output = ReadObservation(withContext: false).Observation?.Output;
-            return output is not null;
-        }
+        TryReadWithContext(out var observation);
+        output = observation?.Output;
+        return output is not null;
     }
 
     /// <summary>Drain one frame from the same queue as TryRead, with its captured host epoch.
@@ -108,18 +106,15 @@ public sealed class WindowsRecognizer : IDisposable
     {
         lock (GuardedGate)
         {
-            observation = ReadObservation(withContext: true).Observation;
+            observation = ReadObservation().Observation;
             return observation.HasValue;
         }
     }
 
-    private (WindowsGestureObservation? Observation, bool Completed) ReadObservation(bool withContext)
+    private (WindowsGestureObservation? Observation, bool Completed) ReadObservation()
     {
         EnsureOpen();
-        NativeEpoch epoch = default;
-        uint result = withContext
-            ? NativeWindows.ReadContext(handle, out var frame, out epoch, out var error)
-            : NativeWindows.Read(handle, out frame, out error);
+        var result = NativeWindows.ReadWithContext(handle, out var frame, out var epoch, out var error);
         error.ThrowIfFailed();
         return result switch
         {
@@ -135,13 +130,13 @@ public sealed class WindowsRecognizer : IDisposable
     /// Once admitted, a dequeued frame is returned. Stop owns input recovery;
     /// Dispose wakes readers with ObjectDisposedException.</summary>
     public async ValueTask<GestureRecognitionOutput?> ReadAsync(CancellationToken cancellationToken = default)
-        => (await reader.ReadAsync(withContext: false, cancellationToken).ConfigureAwait(false))?.Output;
+        => (await ReadWithContextAsync(cancellationToken).ConfigureAwait(false))?.Output;
 
     /// <summary>Wait for the next frame with its host epoch without polling. Cancellation only
     /// ends the wait before queue admission; a dequeued frame is returned. Dispose wakes readers;
     /// Stop allows final frames to drain before completion.</summary>
     public ValueTask<WindowsGestureObservation?> ReadWithContextAsync(CancellationToken cancellationToken = default)
-        => reader.ReadAsync(withContext: true, cancellationToken);
+        => reader.ReadAsync(cancellationToken);
 
     // Registrations are installed under gate before Dispose can close the wait handle.
     // No host callback or continuation runs inside native capture or this lock.

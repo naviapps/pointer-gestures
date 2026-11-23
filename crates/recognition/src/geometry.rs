@@ -61,10 +61,6 @@ pub struct Movement {
 }
 /// Rejects non-finite coordinates. Equal axis deltas have no dominant direction.
 pub fn resolve_movement(start: Point, end: Point) -> Option<Movement> {
-    movement(start, end)
-}
-
-pub(crate) fn movement(start: Point, end: Point) -> Option<Movement> {
     if !start.is_finite() || !end.is_finite() {
         return None;
     }

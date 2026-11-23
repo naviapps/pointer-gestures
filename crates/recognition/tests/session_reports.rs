@@ -305,6 +305,59 @@ fn earliest_deadline_is_reported_with_total_winning_ties() {
         assert_eq!(report.idle_ns, 19);
     }
 }
+
+#[test]
+fn promotion_preserves_the_original_total_deadline() {
+    let mut configuration = config();
+    configuration.total_duration_ns = 100;
+    configuration.idle_duration_ns = 75;
+    let mut e = engine(configuration, true, &[]);
+    down(&mut e);
+    let promoted = moved(&mut e, 20., 0., 51);
+    assert_eq!(promoted.stage, InputStage::Active);
+    assert_eq!(promoted.deadline_ns, Some(101));
+}
+
+#[test]
+fn only_changed_locations_refresh_pending_and_active_idle_deadlines() {
+    let mut configuration = config();
+    configuration.idle_duration_ns = 100;
+    let mut e = engine(configuration, true, &[]);
+    down(&mut e);
+    for (time, x, stage, deadline) in [
+        (11, 0., InputStage::Pending, 101),
+        (21, 1., InputStage::Pending, 121),
+        (31, 20., InputStage::Active, 131),
+        (41, 20., InputStage::Active, 131),
+        (51, 21., InputStage::Active, 151),
+    ] {
+        let output = moved(&mut e, x, 0., time);
+        assert_eq!(output.stage, stage);
+        assert_eq!(output.deadline_ns, Some(deadline), "at {time}");
+    }
+}
+
+#[test]
+fn capped_pending_drag_replays_the_press_and_most_recent_points() {
+    let mut configuration = config();
+    configuration.start_distance = 50.;
+    configuration.maximum_points = 3;
+    let mut e = engine(configuration, false, &[Direction::Right]);
+    down(&mut e);
+    for (time, coordinate) in [(2, 20.), (3, 40.), (4, 60.), (5, 80.)] {
+        let output = moved(&mut e, coordinate, coordinate, time);
+        assert_eq!(output.disposition, Disposition::Consume);
+        assert_eq!(output.stage, InputStage::Pending);
+    }
+    let output = up(&mut e, 90., 90., 6);
+    assert_eq!(output.disposition, Disposition::Consume);
+    assert!(matches!(
+        output.effects.as_slice(),
+        [Effect::Drag { button: 1, points }]
+            if points.as_ref() == [point(0., 0.), point(80., 80.), point(90., 90.)]
+    ));
+}
+
 #[test]
 fn cancellation_stop_replacement_and_invalid_release_keep_their_actual_reason() {
     for (event, outcome) in [

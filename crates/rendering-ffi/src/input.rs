@@ -14,14 +14,20 @@ pub(crate) unsafe fn buffer<'a, T>(
     }
     Ok(unsafe { std::slice::from_raw_parts(data, count) })
 }
-pub(crate) unsafe fn directions(
+pub(crate) unsafe fn directions<'a>(
     data: *const u32,
     count: usize,
-) -> std::result::Result<Vec<Direction>, GeometryError> {
-    unsafe { buffer(data, count) }?
+) -> Result<&'a [Direction], GeometryError> {
+    let codes = unsafe { buffer(data, count) }?;
+    if codes
         .iter()
-        .map(|&value| Direction::try_from(value).map_err(|_| GeometryError::InvalidDirection))
-        .collect()
+        .any(|&value| Direction::try_from(value).is_err())
+    {
+        return Err(GeometryError::InvalidDirection);
+    }
+    // Direction is repr(u32). The caller keeps the validated codes stable for
+    // this call. The slice uses the non-null pointer from `codes` for empty input.
+    Ok(unsafe { std::slice::from_raw_parts(codes.as_ptr().cast::<Direction>(), count) })
 }
 
 #[unsafe(no_mangle)]

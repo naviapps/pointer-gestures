@@ -68,17 +68,17 @@ final class GestureRecognizerContextPolicyTests: XCTestCase {
     recognizer.start()
 
     let down = makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
-    assertDisposition(eventSource.send(down), .consume)
+    XCTAssertEqual(eventSource.send(down), .consume)
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
 
     currentContext.value = disabledContext
 
     let drag = makeGestureInputEvent(
       kind: .buttonMoved(.secondary), location: .init(x: 100, y: 10))
-    assertDisposition(eventSource.send(drag), .consume)
+    XCTAssertEqual(eventSource.send(drag), .consume)
 
     let up = makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 120, y: 10))
-    assertDisposition(eventSource.send(up), .passThrough)
+    XCTAssertEqual(eventSource.send(up), .passThrough)
     XCTAssertEqual(
       sequenceReplayRequests,
       [[.init(x: 10, y: 10), .init(x: 100, y: 10)]]
@@ -110,7 +110,7 @@ final class GestureRecognizerContextPolicyTests: XCTestCase {
     let down = makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
     let result = eventSource.send(down)
 
-    assertDisposition(result, .passThrough)
+    XCTAssertEqual(result, .passThrough)
     XCTAssertEqual(recognizer.snapshot.status.lastFailure, .recognitionDisabled)
   }
 
@@ -137,7 +137,7 @@ final class GestureRecognizerContextPolicyTests: XCTestCase {
       makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
     )
 
-    assertDisposition(result, .passThrough)
+    XCTAssertEqual(result, .passThrough)
     XCTAssertEqual(recognizer.snapshot.status.lastFailure, .recognitionDisabled)
   }
 
@@ -166,7 +166,7 @@ final class GestureRecognizerContextPolicyTests: XCTestCase {
       makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
     )
 
-    assertDisposition(result, .passThrough)
+    XCTAssertEqual(result, .passThrough)
     XCTAssertEqual(recognizer.snapshot.status.lastFailure, .recognitionDisabled)
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
   }
@@ -190,13 +190,13 @@ final class GestureRecognizerContextPolicyTests: XCTestCase {
 
     recognizer.start()
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 20, y: 20))
       ),
       .passThrough
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 20, y: 20))
       ),
@@ -240,7 +240,7 @@ final class GestureRecognizerContextPolicyTests: XCTestCase {
         kind: .buttonDown(.secondary),
         location: .init(x: 10, y: 10)
       ))
-    assertDisposition(disabledResult, .passThrough)
+    XCTAssertEqual(disabledResult, .passThrough)
     XCTAssertEqual(recognizer.snapshot.status.lastFailure, .recognitionDisabled)
 
     currentContext.value = enabledContext
@@ -249,7 +249,7 @@ final class GestureRecognizerContextPolicyTests: XCTestCase {
         kind: .buttonDown(.secondary),
         location: .init(x: 20, y: 20)
       ))
-    assertDisposition(enabledResult, .consume)
+    XCTAssertEqual(enabledResult, .consume)
     XCTAssertNil(recognizer.snapshot.status.lastFailure)
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertTrue(clickRequestPoints.isEmpty)

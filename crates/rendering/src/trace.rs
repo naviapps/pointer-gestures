@@ -1,3 +1,4 @@
+use crate::path::validate_trace_shape;
 use crate::{Bounds, Direction, GeometryError, Point};
 use std::sync::Arc;
 
@@ -27,20 +28,13 @@ impl OverlayTrace {
         points: &[Point],
         tail: Option<Point>,
     ) -> Result<Self, GeometryError> {
-        if directions.is_empty() {
-            return Err(GeometryError::Empty);
-        }
-        if directions.len().checked_add(1) != Some(points.len()) {
-            return Err(GeometryError::PointCount);
-        }
-        if !points.iter().all(|p| p.is_finite()) || tail.is_some_and(|p| !p.is_finite()) {
-            return Err(GeometryError::NonFinite);
-        }
+        validate_trace_shape(directions, points, tail)?;
+        let bounds = Bounds::from_points(points).ok_or(GeometryError::NonFinite)?;
         Ok(Self {
             directions: directions.into(),
             points: points.into(),
             tail,
-            bounds: Bounds::from_points(points).ok_or(GeometryError::NonFinite)?,
+            bounds,
         })
     }
     /// Convert a recognition snapshot into an owned rendering trace.

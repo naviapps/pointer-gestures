@@ -35,23 +35,23 @@ final class GestureRecognizerConfigurationTests: XCTestCase {
     let recognizer = GestureRecognizer(eventSource: eventSource, configuration: configuration)
 
     recognizer.start()
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)),
       .consume
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 40, y: 0))),
       .consume
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 40, y: 0))),
       .consume
     )
 
     XCTAssertEqual(matchedID, id)
-    assertReplayRequests(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 0))])
+    XCTAssertEqual(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 0))])
   }
 
   func testConstructedConfigurationDrivesRecognition() throws {
@@ -137,24 +137,24 @@ private func assertRecognitionButtonStartsGesture(
   let recognizer = GestureRecognizer(eventSource: eventSource, configuration: configuration)
 
   recognizer.start()
-  assertDisposition(
+  XCTAssertEqual(
     eventSource.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)),
     .passThrough,
     file: file,
     line: line
   )
-  assertDisposition(
+  XCTAssertEqual(
     eventSource.send(makeGestureInputEvent(kind: .buttonDown(button), location: .zero)),
     .consume,
     file: file,
     line: line
   )
-  assertDisposition(
+  XCTAssertEqual(
     eventSource.send(makeGestureInputEvent(kind: .buttonUp(button), location: .zero)),
     .consume,
     file: file,
     line: line
   )
 
-  assertReplayRequests(replayRequests, [.click(button: button, at: .zero)], file: file, line: line)
+  XCTAssertEqual(replayRequests, [.click(button: button, at: .zero)], file: file, line: line)
 }

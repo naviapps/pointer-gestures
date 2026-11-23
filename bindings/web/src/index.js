@@ -129,12 +129,12 @@ function decodeUpdate(update) {
   try {
     return {
       matchId: update.matched ?? null,
-      trace: decodeTrace(update.trace()),
+      trace: decodeTrace(update.takeTrace()),
       active: update.active,
       deadlineMs: update.deadlineMs ?? null,
       discardPendingVisibleTrace: update.discardPendingVisibleTrace,
       expired: update.expired,
-      lastSession: decodeSession(update.lastSession()),
+      lastSession: decodeSession(update.takeLastSession()),
     };
   } finally {
     update.free();
@@ -376,8 +376,8 @@ export function patternPath(
   }
   try {
     return {
-      commands: decodeCommands(geometry.commands()),
-      arrowhead: decodeCommands(geometry.arrowhead()),
+      commands: decodeCommands(geometry.takeCommands()),
+      arrowhead: decodeCommands(geometry.takeArrowhead()),
     };
   } finally {
     geometry.free();

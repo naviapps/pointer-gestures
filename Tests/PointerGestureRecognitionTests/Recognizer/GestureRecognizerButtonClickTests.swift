@@ -24,7 +24,7 @@ final class GestureRecognizerButtonClickTests: XCTestCase {
 
     recognizer.start()
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
       ),
@@ -32,13 +32,13 @@ final class GestureRecognizerButtonClickTests: XCTestCase {
     )
     XCTAssertTrue(replayRequests.isEmpty)
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 10, y: 10))
       ),
       .consume
     )
-    assertReplayRequests(replayRequests, [.click(button: .secondary, at: .init(x: 10, y: 10))])
+    XCTAssertEqual(replayRequests, [.click(button: .secondary, at: .init(x: 10, y: 10))])
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
   }
@@ -67,13 +67,13 @@ final class GestureRecognizerButtonClickTests: XCTestCase {
 
     recognizer.start()
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)
       ),
       .consume
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 20, y: 0))
       ),
@@ -107,27 +107,27 @@ final class GestureRecognizerButtonClickTests: XCTestCase {
 
     recognizer.start()
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
       ),
       .consume
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 20, y: 20))
       ),
       .consume
     )
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 20, y: 20))
       ),
       .consume
     )
 
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [
         .click(button: .secondary, at: .init(x: 10, y: 10)),
@@ -166,7 +166,7 @@ final class GestureRecognizerButtonClickTests: XCTestCase {
     )
     XCTAssertTrue(recognizer.snapshot.status.isCapturingGesture)
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 80, y: 80))
       ),
@@ -175,14 +175,14 @@ final class GestureRecognizerButtonClickTests: XCTestCase {
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertFalse(recognizer.snapshot.trace.isVisible)
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonUp(.secondary), location: .init(x: 80, y: 80))
       ),
       .consume
     )
 
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [
         .release(button: .secondary, at: .init(x: 40, y: 10)),

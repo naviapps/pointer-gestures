@@ -55,9 +55,10 @@ unsafe fn validated_pattern<'a>(
         return Err(PatternValidation::error(5, None));
     }
     let codes = unsafe { std::slice::from_raw_parts(data, count) };
-    if let Some(index) = codes.iter().position(|&d| !(1..=4).contains(&d)) {
+    if let Some(index) = codes.iter().position(|&d| Direction::try_from(d).is_err()) {
         return Err(PatternValidation::error(4, Some(index)));
     }
+    // Direction is repr(u32), and every code has been validated.
     Ok(unsafe { std::slice::from_raw_parts(data.cast::<Direction>(), count) })
 }
 

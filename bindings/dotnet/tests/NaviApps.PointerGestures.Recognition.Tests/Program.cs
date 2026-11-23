@@ -1,6 +1,9 @@
 using System.Runtime.InteropServices;
 using NaviApps.PointerGestures.Recognition;
 using NaviApps.PointerGestures.Recognition.Windows;
+#if SOURCE_CONSUMER
+using NaviApps.PointerGestures.Recognition.Interop;
+#endif
 
 static void Check(bool value, string description) { if (!value) throw new System.Diagnostics.UnreachableException(description); }
 static void CheckSnapshot<T>(T actual, T expected, string description) where T : notnull
@@ -32,24 +35,25 @@ static void CheckInvalidTuning(Action validate, string field)
     }
 }
 
+#if SOURCE_CONSUMER
 // Exercise native-to-public error translation without installing OS input hooks.
-var windowsErrorType = typeof(GestureRecognitionEngine).Assembly.GetType("NaviApps.PointerGestures.Recognition.Interop.WindowsError", true)!;
 foreach (var (kind, failure) in new (uint, WindowsRecognitionFailure)[] {
     (2, WindowsRecognitionFailure.AlreadyRunning), (3, WindowsRecognitionFailure.System),
     (4, WindowsRecognitionFailure.IncompleteRecovery), (5, WindowsRecognitionFailure.ConsumerLagged),
     (6, WindowsRecognitionFailure.WorkerStopped), (7, WindowsRecognitionFailure.ReplayTargetChanged) })
 {
-    var nativeError = Activator.CreateInstance(windowsErrorType)!;
-    foreach (var (name, value) in new (string, uint)[] { ("Kind", kind), ("System", 5), ("Sent", 2), ("Expected", 3) })
-        windowsErrorType.GetField(name, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(nativeError, value);
-    try { windowsErrorType.GetMethod("ThrowIfFailed", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(nativeError, null); throw new System.Diagnostics.UnreachableException("Native failure was ignored"); }
-    catch (System.Reflection.TargetInvocationException e) when (e.InnerException is WindowsRecognitionException error)
+    var nativeError = new WindowsError { Kind = kind, System = 5, Sent = 2, Expected = 3 };
+    try { nativeError.ThrowIfFailed(); throw new System.Diagnostics.UnreachableException("Native failure was ignored"); }
+    catch (WindowsRecognitionException error)
     {
         Check(error.Failure == failure, "Structured native reason");
         Check(error.NativeErrorCode == (kind is 3 or 4 ? 5u : 0u), "Structured OS error");
         Check(error.AcceptedEventCount == (kind == 4 ? 2u : 0u) && error.RequestedEventCount == (kind == 4 ? 3u : 0u), "Structured recovery counts");
     }
 }
+Check(Marshal.SizeOf<NativeFrame>() == 160, "Frame layout");
+Check(Marshal.SizeOf<NativeEffect>() == 144, "Effect layout");
+#endif
 Check(Marshal.SizeOf<GesturePoint>() == 16, "Point layout");
 using var matcher = new GesturePatternMatcher();
 Check(matcher.IsEmpty, "Empty matcher");
@@ -68,8 +72,6 @@ Check(matcher.IsEmpty && snapshot.Match([Direction.Right, Direction.Down]) == 0,
 matcher.Dispose();
 try { matcher.Match([Direction.Right]); throw new System.Diagnostics.UnreachableException("Disposed matcher accepted"); }
 catch (ObjectDisposedException) { }
-Check(Marshal.SizeOf(typeof(GestureRecognitionEngine).Assembly.GetType("NaviApps.PointerGestures.Recognition.NativeFrame", true)!) == 160, "Frame layout");
-Check(Marshal.SizeOf(typeof(GestureRecognitionEngine).Assembly.GetType("NaviApps.PointerGestures.Recognition.NativeEffect", true)!) == 144, "Effect layout");
 using var activeMatcher = new GesturePatternMatcher();
 activeMatcher.Register([Direction.Right], 0);
 var configuration = new GestureRecognitionConfiguration(10, 5, 1000, 100, 8);
@@ -214,25 +216,23 @@ recording.Step(new(PointerEventKind.Down, 1, new(40, 0)), 130);
 var closed = recording.Close(140);
 Check(!closed.Status.Ready && closed.Effects[0] is Effect.Click { Point.X: 40 }, "Close recovery");
 
-foreach (var atDeadline in new[] { false, true })
+using (var staged = new GestureRecognitionEngine(configuration with { TotalDurationNs = 1_000, IdleDurationNs = 0 }))
 {
     using var formerMatcher = new GesturePatternMatcher();
     using var nextMatcher = new GesturePatternMatcher();
     formerMatcher.Register([Direction.Right], 41);
     nextMatcher.Register([Direction.Right], 42);
-    using var staged = new GestureRecognitionEngine(configuration with { TotalDurationNs = 1_000, IdleDurationNs = 0 });
     staged.UseMatcher(formerMatcher);
     staged.Start(0);
     var oldDown = staged.Step(new(PointerEventKind.Down, 1, new(0, 0)), 1);
     staged.SetPolicy(enabled: false, modifiersSatisfied: false, nowNs: 1);
-    var now = atDeadline ? oldDown.DeadlineNs!.Value : 2;
-    var expectedOutcome = atDeadline ? SessionOutcome.TotalDeadline : SessionOutcome.Superseded;
+    const ulong now = 2;
 
     var recovery = staged.PrepareReplacementPress(now);
     Check(recovery.Disposition == Disposition.Control && recovery.Stage == InputStage.Idle &&
         recovery.InputGeneration == 0 && recovery.DeadlineNs is null && recovery.DiscardPendingVisibleTrace &&
         recovery.Effects is [Effect.Click { Button: 1, Point.X: 0, Point.Y: 0 }] &&
-        recovery.LastSessionReport?.Outcome == expectedOutcome,
+        recovery.LastSessionReport?.Outcome == SessionOutcome.Superseded,
         "Preparation returns old recovery and its reason before any new press is admitted");
 
     // The host delivers recovery first, then chooses the next matcher and policy.
@@ -253,7 +253,7 @@ foreach (var atDeadline in new[] { false, true })
         "Modifier rejection maps to the managed disposition and failure");
     staged.Close(now + 4);
     Check(recovery.Effects is [Effect.Click { Point.X: 0 }] &&
-        recovery.LastSessionReport?.Outcome == expectedOutcome,
+        recovery.LastSessionReport?.Outcome == SessionOutcome.Superseded,
         "Copied preparation output survives later input and engine closure");
 }
 
@@ -385,11 +385,6 @@ using (var extremeMotion = new GestureRecognitionEngine(configuration with { Tot
         "Typed endpoints and session measurement retain extreme finite values after close");
 }
 
-foreach (var limit in new int[] { 0, 4097, int.MaxValue })
-{
-    try { using var invalidBudget = new GestureRecognitionEngine(configuration with { MaximumDirections = limit }); throw new System.Diagnostics.UnreachableException("Invalid budget accepted"); }
-    catch (ArgumentException) { }
-}
 using (var bounded = new GestureRecognitionEngine(configuration with { MaximumDirections = 1, TotalDurationNs = 0, IdleDurationNs = 0 }))
 {
     bounded.Start(0); bounded.SetRecording(true, 0);

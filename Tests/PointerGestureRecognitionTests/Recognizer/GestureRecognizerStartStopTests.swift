@@ -37,7 +37,7 @@ final class GestureRecognizerStartStopTests: XCTestCase {
     recognizer.stop()
     XCTAssertEqual(recognizer.snapshot.status.lifecycle, .idle)
     XCTAssertEqual(eventSource.stopCount, 1)
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(makeGestureInputEvent(kind: .buttonDown(.secondary), location: .zero)),
       .passThrough
     )
@@ -94,7 +94,7 @@ final class GestureRecognizerStartStopTests: XCTestCase {
 
     recognizer.stop()
 
-    assertReplayRequests(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 10))])
+    XCTAssertEqual(replayRequests, [.release(button: .secondary, at: .init(x: 40, y: 10))])
     XCTAssertEqual(stopCountWhenReplayWasRequested, 1)
     XCTAssertEqual(recognizer.snapshot.status.lifecycle, .idle)
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
@@ -123,7 +123,7 @@ final class GestureRecognizerStartStopTests: XCTestCase {
 
     recognizer.stop()
 
-    assertReplayRequests(replayRequests, [.click(button: .secondary, at: .init(x: 10, y: 10))])
+    XCTAssertEqual(replayRequests, [.click(button: .secondary, at: .init(x: 10, y: 10))])
     XCTAssertEqual(recognizer.snapshot.status.lifecycle, .idle)
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertEqual(eventSource.stopCount, 1)
@@ -158,7 +158,7 @@ final class GestureRecognizerStartStopTests: XCTestCase {
 
     recognizer.stop()
 
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [.click(button: .secondary, at: .init(x: 10, y: 10))]
     )
@@ -195,7 +195,7 @@ final class GestureRecognizerStartStopTests: XCTestCase {
     _ = eventSource.send(
       makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
     )
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonMoved(.secondary), location: .init(x: 10, y: 60))
       ),
@@ -207,7 +207,7 @@ final class GestureRecognizerStartStopTests: XCTestCase {
 
     recognizer.stop()
 
-    assertReplayRequests(
+    XCTAssertEqual(
       replayRequests,
       [.dragStart(button: .secondary, points: [.init(x: 10, y: 10), .init(x: 10, y: 60)])]
     )

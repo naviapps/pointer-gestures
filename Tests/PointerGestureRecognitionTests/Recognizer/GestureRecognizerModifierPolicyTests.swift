@@ -41,7 +41,7 @@ final class GestureRecognizerModifierPolicyTests: XCTestCase {
 
     recognizer.start()
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(
           kind: .buttonDown(.secondary),
@@ -51,7 +51,7 @@ final class GestureRecognizerModifierPolicyTests: XCTestCase {
       .consume
     )
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(
           kind: .buttonMoved(.secondary),
@@ -62,7 +62,7 @@ final class GestureRecognizerModifierPolicyTests: XCTestCase {
     )
     XCTAssertTrue(recognizer.snapshot.status.isCapturingGesture)
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 120, y: 10))
       ),
@@ -72,7 +72,7 @@ final class GestureRecognizerModifierPolicyTests: XCTestCase {
     XCTAssertFalse(recognizer.snapshot.status.isCapturingGesture)
     XCTAssertEqual(recognizer.snapshot.status.lastFailure, .modifiersNotSatisfied)
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(
           kind: .buttonUp(.secondary),
@@ -103,7 +103,7 @@ final class GestureRecognizerModifierPolicyTests: XCTestCase {
 
     recognizer.start()
 
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 10, y: 10))
       ),
@@ -112,7 +112,7 @@ final class GestureRecognizerModifierPolicyTests: XCTestCase {
     XCTAssertEqual(recognizer.snapshot.status.lastFailure, .modifiersNotSatisfied)
 
     recognizer.isRecordingModeEnabled = true
-    assertDisposition(
+    XCTAssertEqual(
       eventSource.send(
         makeGestureInputEvent(kind: .buttonDown(.secondary), location: .init(x: 20, y: 20))
       ),
