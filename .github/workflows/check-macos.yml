@@ -63,3 +63,7 @@ jobs:
         run: mise exec -- cargo fetch --locked
       - name: Check source and bindings
         run: mise exec -- make check-source
+      - name: Check Web source
+        run: |
+          mise exec -- cargo fetch --locked --manifest-path bindings/web/rust/Cargo.toml
+          mise exec -- make check-web-source

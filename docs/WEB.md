@@ -194,6 +194,9 @@ in Node. Browser integration, HTTP CSP, pointer capture, loading and accessibili
 separate consumer browser checks. Run the root `make check` for native regressions;
 this nested workspace does not alter native Cargo.lock or framework receipts.
 
+Run `mise exec -- cargo fetch --locked --manifest-path bindings/web/rust/Cargo.toml` and
+`mise exec -- make check-web-source` for the Web Rust tests and lint in public CI.
+
 Run `mise exec -- make check-web-reproducibility` from a local Git checkout to
 build its committed HEAD offline from two fresh source paths, including one with
 spaces. The check compares every generated package file, including Wasm,

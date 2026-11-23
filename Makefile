@@ -2,7 +2,7 @@ SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-a
 ARTIFACTS := $(CURDIR)/Artifacts
 
 .DEFAULT_GOAL := check
-.PHONY: check check-source test-managed test-rust check-distribution check-tools check-docs check-native check-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-types check-web-reproducibility check-web-browser build build-release format lint test
+.PHONY: check check-source test-managed test-rust check-distribution check-tools check-docs check-native check-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release format lint test
 
 check: check-source test check-consumer
 
@@ -54,12 +54,14 @@ check-windows:
 	python3 -m tools.windows check
 
 # Web tools and dependencies remain independent of native consumer validation.
-check-web:
-	cargo test --manifest-path bindings/web/rust/Cargo.toml --locked --offline
-	cargo clippy --manifest-path bindings/web/rust/Cargo.toml --all-targets --features web --locked --offline -- -D warnings
+check-web: check-web-source
 	python3 -m tools.web
 	node --test bindings/web/tests/*.test.mjs
 	node tools/web-consumer.mjs
+
+check-web-source:
+	cargo test --manifest-path bindings/web/rust/Cargo.toml --locked --offline
+	cargo clippy --manifest-path bindings/web/rust/Cargo.toml --all-targets --features web --locked --offline -- -D warnings
 
 check-web-types:
 	node tools/web-consumer.mjs --types-only
