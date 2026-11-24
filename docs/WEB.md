@@ -136,31 +136,23 @@ SVG or its drawing API. Static fallback paths can use this same function at buil
 
 ## Session Reports
 
-Every update includes nullable `lastSession`, a copied coordinate-free report of
-the latest completed retained session. `outcome` distinguishes matches, recordings,
-ordinary clicks, invalid prefixes, cancellation, stop, replacement, total/idle
-expiration, malformed releases and direction-limit recovery. `elapsedMs` measures
-from the original press, `idleMs` from the last changed finite location, `pointCount`
-counts admitted finite pointer samples and `maximumAxisDistance` uses host units.
-`directions` contains accepted runs; `rejectedDirection` identifies a rejected turn.
-`captured` and `recording` describe the completed session.
+Every update includes nullable `lastSession`. See the
+[shared report and budget contract](https://github.com/naviapps/pointer-gestures/blob/main/README.md#session-measurements-and-budgets)
+for outcomes and the meaning of its fields. The Web binding exposes `elapsedMs`
+and `idleMs` in milliseconds. Convert `generation` and `pointCount` from
+`bigint` to strings before JSON serialization.
 
-`generation` and `pointCount` are `bigint` to preserve the full native range;
-convert them explicitly to strings before JSON serialization. Compare the wrapping,
-engine-local generation to detect replacement. This latest value persists across
-later input and is not an event history or proof of a browser/native action.
-
-`maximumDirections` defaults to 64, is validated in 1..4096 by Rust and is captured
-at `begin`. Exceeding it abandons recording/recognition, discards queued geometry
-and never emits a match. It bounds accepted direction/endpoint storage separately
-from `maximumPoints`, including when both deadlines are disabled.
+Use `maximumDirections` for the direction budget and `maximumPoints` for the
+raw point limit. When the direction budget is exceeded, discard queued geometry
+as directed by `discardPendingVisibleTrace`.
 
 ## Build and verify
 
 These are SDK development commands. Clone the
 [source repository](https://github.com/naviapps/pointer-gestures) and run them from
 its root; the generated consumer package does not contain build tools or manifests.
-Prepare the pinned tools using the [development setup](../README.md#development-and-acceptance)
+Prepare the pinned tools using the
+[development setup](https://github.com/naviapps/pointer-gestures/blob/main/README.md#development-and-acceptance)
 and use the pinned SDK Tooling CLI from mise.
 
 On macOS ARM64, install the Wasm target and fetch the separate locked dependencies

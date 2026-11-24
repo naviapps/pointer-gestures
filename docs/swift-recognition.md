@@ -135,30 +135,21 @@ Host apps own the choice of limits, settings, and recovery UI.
 
 ## Session Reports and Direction Budget
 
-Read `GestureRecognizerState.lastSessionReport` for a copied, coordinate-free
-`GestureSessionReport`. `GestureSessionOutcome` distinguishes a match, recording,
-ordinary click, failed prefix, cancellation, stop, replacement, each deadline,
-malformed release and budget recovery. Reports measure from the original press and
-last actual changed location even after tuning restarts a deadline. They describe
-recognition decisions and requested effects, not successful OS replay or command
-execution. No data is persisted or sent.
-
-The latest report persists across snapshots and later input. Compare its wrapping,
-recognizer-local generation; observation can coalesce and is not an event history.
-Status, trace and report snapshots compare their scalar fields and ordered
+Read `GestureRecognizerState.lastSessionReport` for a `GestureSessionReport`
+with a typed `GestureSessionOutcome`. See the
+[shared report and budget contract](../README.md#session-measurements-and-budgets).
+Compare the report generation when observing state because observation can
+coalesce. Status, trace and report snapshots compare scalar fields and ordered
 collection contents by value.
+
 When a new button-down replaces retained input, the recognizer requests its recovery
 before checking the new press's host policy. The old session reports `superseded`,
 or its deadline outcome if it already expired.
 If recovery handles a newer press or restarts the source, the earlier press
 passes through before the recognizer asks for its host context.
-`GestureRecognizerTuning.maximumDirectionCount` defaults to 64 and is validated in
-1...4096. Each press captures the limit. Attempting another direction recovers input
-and hides the trace without matching. Lowering tuning affects subsequent sessions,
-not the budget already captured by current input. The raw point limit remains
-independent; choose a direction budget large enough for registered patterns.
-Reducing the raw point limit trims the current trace immediately. Replay keeps
-the press and at least one recent point, and earlier snapshots retain their copies.
+
+Set the direction budget with `GestureRecognizerTuning.maximumDirectionCount`.
+Earlier Swift snapshots retain their copies when tuning trims the current trace.
 
 ## Recognition Pipeline
 

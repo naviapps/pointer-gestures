@@ -15,6 +15,8 @@ persistence and style. Optional macOS and Windows adapters own overlay resources
   [portable rendering](https://github.com/naviapps/pointer-gestures/blob/main/docs/swift-rendering.md),
   [SwiftUI](https://github.com/naviapps/pointer-gestures/blob/main/docs/swiftui.md)
   and [macOS overlays](https://github.com/naviapps/pointer-gestures/blob/main/docs/swift-macos-overlays.md).
+- Shared contracts: [session measurements and budgets](#session-measurements-and-budgets)
+  and [input and geometry](#input-and-geometry-contracts).
 - SDK work: [development and acceptance](#development-and-acceptance),
   [browser builds](https://github.com/naviapps/pointer-gestures/blob/main/docs/WEB.md#build-and-verify) and [Windows development](https://github.com/naviapps/pointer-gestures/blob/main/docs/WINDOWS.md).
 
@@ -402,7 +404,9 @@ recording, ordinary clicks, unmatched prefixes, cancellation, stop, replacement,
 total/idle expiration, malformed releases and direction-budget recovery. Elapsed
 time starts at the original press and idle time at the last changed finite point;
 tuning resets do not rewrite measurements. Sample count includes admitted finite
-press, move and release events. Displacement uses the caller's coordinate units.
+press, move and release events. Maximum axis displacement uses the caller's
+coordinate units. The report includes the accepted direction runs, any rejected
+direction, whether the start threshold was crossed and the recording mode at the press.
 
 Reports own their data (C views borrow the frame). They persist through later
 snapshots and input until another retained session ends. Compare the nonzero,
