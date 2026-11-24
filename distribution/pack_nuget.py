@@ -3,7 +3,7 @@
 import argparse
 from pathlib import Path
 
-from sdk_tooling import nuget
+from sdk_tooling import c_headers, nuget
 from sdk_tooling.xcframework import xcframework
 
 from distribution.nuget import MACOS_RIDS
@@ -15,6 +15,7 @@ RUNTIMES = (*MACOS_RIDS, RID)
 
 
 def pack(root, runtimes):
+    c_headers.prepare_generated(root)
     license_file = root / "LICENSE"
     package_files = {"README.md": root / DOTNET_README, "LICENSE": license_file}
     package_files.update(nuget.retained_notice_files(root / "ThirdParty", "licenses"))

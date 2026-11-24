@@ -12,6 +12,7 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from sdk_tooling import c_headers
 from sdk_tooling.adapters import load, support_inputs
 from sdk_tooling.dotnet import pinned_sdk_version
 from sdk_tooling.native_plan import ffi_product
@@ -73,7 +74,6 @@ class WindowsSDK:
         self.product = ffi_product(self.root, kind)
         self.package = self.product.package
         self.library = self.product.library
-        self.symbols = public_exports(self.layout)
         self.csproj = self.layout.project
         self.id = self.csproj.stem
         self.native = self.root / ".native-build/windows" / kind
@@ -88,6 +88,10 @@ class WindowsSDK:
         )
         self.dotnet = self.env.get("DOTNET_BIN") or shutil.which("dotnet") or "dotnet"
         self.nuget = NuGetSDK(self.root, kind, self.env, self.dotnet, self.native)
+
+    @property
+    def symbols(self):
+        return public_exports(self.layout)
 
     def run(self, args, **kwargs):
         subprocess.run([str(a) for a in args], cwd=self.root, env=self.env, check=True, **kwargs)
@@ -202,6 +206,7 @@ class WindowsSDK:
 
     def build(self):
         host, tools = self.prepare_windows(msvc=True, managed=False)
+        symbols = self.symbols
 
         def stage(stage):
             shutil.copytree(self.ffi / "include", stage / "include")
@@ -220,19 +225,20 @@ class WindowsSDK:
             output_root=self.native,
             native_host=host,
             source_inputs=self.sources,
-            inspect=lambda path: inspect_pe(path, MACHINE, self.symbols),
+            inspect=lambda path: inspect_pe(path, MACHINE, symbols),
             stage_extra=stage,
         )
         print(f"Built and inspected {RID}. Windows execution is a separate check.")
 
     def verify(self):
+        symbols = self.symbols
         directory, _ = load("windows").verify_artifact(
             self.product,
             "x64",
             output_root=self.native,
             source_inputs=self.sources,
             environment=self.env,
-            inspect=lambda path: inspect_pe(path, MACHINE, self.symbols),
+            inspect=lambda path: inspect_pe(path, MACHINE, symbols),
         )
         return directory
 
@@ -501,6 +507,8 @@ def main():
     )
     root = Path(__file__).resolve().parents[1]
     try:
+        if args.command not in ("check-package", "test-package"):
+            c_headers.prepare_generated(root)
         if args.command == "pack":
             if not args.version or not args.output:
                 parser.error("--version and --output are required")

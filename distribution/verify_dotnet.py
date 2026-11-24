@@ -10,6 +10,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from sdk_tooling import c_headers
 from sdk_tooling.adapters import load
 
 from distribution.abi_layout import report_layout
@@ -43,6 +44,8 @@ def main(root=None):
         raise SystemExit(
             "Runtime interop checks require host-native artifacts, not a cross target."
         )
+    if sys.platform != "win32":
+        c_headers.prepare_generated(ROOT, env=env)
     layouts = [PackageLayout(ROOT, kind) for kind in KINDS]
     subprocess.run(
         [

@@ -98,7 +98,7 @@
         },
         "inputs": {
           "Cargo.toml": "b7c566f2db8c015931f833e593b86247d1e5d084b7186baeaecf540b73372d3a",
-          "crates/recognition-ffi/Cargo.toml": "52686ea4166b02d5c7521b347d83f8bff172ed97809ab80e50bdbc8c7986d275"
+          "crates/recognition-ffi/Cargo.toml": "34523c3a5ec3c76daf6a503182b12b9871b6f877e7e6bb3157f0809da350a6fe"
         },
         "name": "pointer-gesture-recognition-ffi",
         "source": "workspace",
@@ -115,7 +115,7 @@
     "workspaceInputs": {
       "Cargo.lock": "cf7f31c8774152ec3a55101a24ef8aa5811b4ec4ed48725f76d8645caf99dcb7",
       "Cargo.toml": "b7c566f2db8c015931f833e593b86247d1e5d084b7186baeaecf540b73372d3a",
-      "crates/recognition-ffi/Cargo.toml": "52686ea4166b02d5c7521b347d83f8bff172ed97809ab80e50bdbc8c7986d275",
+      "crates/recognition-ffi/Cargo.toml": "34523c3a5ec3c76daf6a503182b12b9871b6f877e7e6bb3157f0809da350a6fe",
       "crates/recognition/Cargo.toml": "15eed4819b13b45aaa9fd0c78330e189ad1c163cd5769bc99fb6f6635ff781cc",
       "rust-toolchain.toml": "d13306be0ecda81ce779baa290ffb417380d525928477f16200884b5169cca33"
     }
@@ -182,7 +182,7 @@
     "ThirdParty/windows-link-0.2.1/license-mit": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
     "ThirdParty/windows-sys-0.61.2/license-apache-2.0": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
     "ThirdParty/windows-sys-0.61.2/license-mit": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
-    "crates/recognition-ffi/Cargo.toml": "52686ea4166b02d5c7521b347d83f8bff172ed97809ab80e50bdbc8c7986d275",
+    "crates/recognition-ffi/Cargo.toml": "34523c3a5ec3c76daf6a503182b12b9871b6f877e7e6bb3157f0809da350a6fe",
     "crates/recognition-ffi/include/pointer_gesture_recognition.h": "58d43bd91a1ce5b044f0e52db9fbda0cd91289e4bb0b2954acc268bf68cf0e3f",
     "crates/recognition-ffi/module.modulemap": "604119572d254386bfadd0f969314c0c6de1e02bb752b0424e1ce816e1e46b28",
     "crates/recognition-ffi/src/engine.rs": "002beb3b5b81717c1200866876529c0a04a24bd3c6f778f8fab0582b4ee0db29",
@@ -201,7 +201,7 @@
     "crates/recognition/src/replay.rs": "c82dc4b51b58409797b151db14e169e71a68c5143df291710ea87a4ecf24df7d",
     "crates/recognition/src/session.rs": "cfab9b2c72597bf43e061c1be35abb310540ca52ca6fba820b5c4961fbd28481",
     "crates/recognition/src/startup.rs": "892250564af9f2922bae765907435d1c64045fab4b3f3530b55169fd888f2494",
-    "crates/rendering-ffi/Cargo.toml": "c957c37bb2e302e10869a9a604419c23c774f4e0daba1c1b0164a0f77a8ced7e",
+    "crates/rendering-ffi/Cargo.toml": "c0f64366221aafb9ff7218dca88aaacc82789c81387c20574c3ecee32f14fac2",
     "crates/rendering-windows/Cargo.toml": "622794583771a92d1af08105e969841998968b07fabc985111be1b4361140e45",
     "crates/rendering/Cargo.toml": "9fe782963a3b79f6af5cc1855e451a9de0801c2577da7d2d0f6b3404c1928572",
     "native.toml": "96cf7d7f09f35dc94586024a1dd20acad544f9a95b059dd7794c38c9109a257f",

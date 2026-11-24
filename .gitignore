@@ -18,6 +18,12 @@ xcuserdata/
 /fixtures/acceptance/browser/node_modules/
 /.web-build/
 /.native-build/
+/crates/recognition-ffi/include/pointer_gesture_recognition.h
+/crates/recognition-ffi/include/windows/pointer_gesture_recognition_windows.h
+/crates/recognition-ffi/module.modulemap
+/crates/rendering-ffi/include/pointer_gesture_rendering.h
+/crates/rendering-ffi/include/windows/pointer_gesture_rendering_windows.h
+/crates/rendering-ffi/module.modulemap
 /bindings/dotnet/**/bin/
 /bindings/dotnet/**/obj/
 __pycache__/

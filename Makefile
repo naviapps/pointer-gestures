@@ -44,11 +44,11 @@ test-rust:
 	cargo test --workspace --locked --offline
 	cargo clippy --workspace --all-targets --locked --offline -- -D warnings
 
-native: generate-header
+native:
 	$(SDK_TOOLING) xcframework
 
 # The maintained C callers use ASan; the prebuilt Rust frameworks do not.
-test-ffi:
+test-ffi: check-header
 	mkdir -p .native-build
 	@set -e; for kind in recognition rendering; do \
 	  if [ "$$kind" = recognition ]; then module=CPointerGestureRecognition; else module=CPointerGestureRendering; fi; \

@@ -1,4 +1,0 @@
-framework module CPointerGestureRecognition {
-  umbrella header "pointer_gesture_recognition.h"
-  export *
-}

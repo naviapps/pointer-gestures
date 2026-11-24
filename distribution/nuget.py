@@ -16,6 +16,7 @@ import zipfile
 from contextlib import contextmanager
 from pathlib import Path
 
+from sdk_tooling import c_headers
 from sdk_tooling.adapters import load
 from sdk_tooling.xcframework import xcframework
 
@@ -363,6 +364,7 @@ def main():
             require_macos_host(rids[0], dotnet, env)
         selected = (args.sdk,) if args.sdk else KINDS
         if args.command == "pack":
+            c_headers.prepare_generated(root, env=env)
             with candidate_feed(root, args.output, args.version, selected) as stage:
                 for kind in selected:
                     assets = {}

@@ -27,7 +27,7 @@ The included macOS frameworks have long paths; this repository-local Git setting
 avoids changing Windows policy. Package-consumer checks use the system temporary
 directory so a deeply nested checkout does not lengthen NuGet's extracted paths.
 
-- The Windows SDK runtime is `win-x64`. Install the pinned native Python and Rust toolchain and its `x86_64-pc-windows-msvc` standard library.
+- The Windows SDK runtime is `win-x64`. Install the pinned native Python and Rust toolchain and its `x86_64-pc-windows-msvc` standard library. Put the cbindgen version pinned in `mise.toml` on `PATH` to generate the C headers.
 - Select the pinned x64 .NET 10 SDK through an absolute `DOTNET_BIN` path on
   ARM64 Windows. Consumers require a [supported .NET operating system](https://github.com/dotnet/core/blob/main/release-notes/10.0/supported-os.md).
 - Select host-native MSVC tools for the x64 target. The Windows ARM64 acceptance
@@ -232,7 +232,8 @@ python -I -B $sdkTooling python -m distribution.windows_sdk build
 python -I -B $sdkTooling python -m distribution.windows_sdk verify
 ```
 
-The build emits both SDK libraries for `win-x64`. Keep the full RID directories
+The build generates the C headers from Rust and emits both SDK libraries for
+`win-x64`. Keep the full RID directories
 with the same SDK revision when moving candidates between hosts.
 Use the original immutable SDK checkout to verify a historical ARM64 build.
 
