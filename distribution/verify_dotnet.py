@@ -13,7 +13,7 @@ from pathlib import Path
 from sdk_tooling.adapters import load
 
 from distribution.abi_layout import report_layout
-from distribution.package_layout import KINDS, PackageLayout
+from distribution.package_layout import DOTNET_README, KINDS, PackageLayout
 
 
 def main(root=None):
@@ -118,9 +118,9 @@ def main(root=None):
             with tempfile.TemporaryDirectory(prefix="abi-layout-", dir=native) as work:
                 layout = report_layout(sdk.ffi, Path(work), compiler=compiler, env=env)
                 execute(sdk.tests, "--abi-layout", layout)
-    examples = re.findall(r"```csharp\n(.*?)\n```", (ROOT / "README.md").read_text(), re.S)
+    examples = re.findall(r"```csharp\n(.*?)\n```", (ROOT / DOTNET_README).read_text(), re.S)
     if not examples:
-        raise SystemExit("README.md must contain a runnable C# example.")
+        raise SystemExit(f"{DOTNET_README} must contain a runnable C# example.")
     for index, source in enumerate(examples, 1):
         with tempfile.TemporaryDirectory(prefix="readme-", dir=native) as directory:
             work = Path(directory)

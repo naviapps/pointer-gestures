@@ -178,7 +178,9 @@ accepted by your host. The recognition engine accepts monotonic
 nanoseconds and returns ordered effects; it has no OS input, wall-clock, callback,
 UI or persistence dependency. Rendering depends on that safe crate for shared values.
 Rendering's default feature set is geometry only. Enable `features = ["raster"]`
-on the rendering dependency when the client needs CPU rasterization.
+on the rendering dependency to draw shared paths into bounded premultiplied
+RGBA8 images with antialiasing and round joins and caps. It uses tiny-skia
+without PNG, file or network dependencies.
 
 From a clean, complete SDK checkout with the pinned compiler,
 `make check-rust-consumer` validates recognition-only, default geometry and explicit
@@ -206,6 +208,11 @@ both APIs. Keep the framework and header from the same SDK revision. This
 installation uses the prebuilt framework without Rust, Python or SDK build tools;
 native C runtime acceptance is a separate check.
 
+For recognition, deliver the recovery output from the Stop event
+(`PointerGestureRecognitionEvent.kind = 5`) before tearing down host input.
+`pointer_gesture_recognition_engine_destroy` releases the engine without
+requesting recovery. Owned output frames remain valid after engine destruction.
+
 From a clean committed SDK checkout on owned macOS, `make check-c-consumer`
 validates separate recognition and rendering clients against copies of the frameworks
 with Clang from the macOS developer tools.
@@ -220,179 +227,14 @@ remain host-owned. See [Browser binding](https://github.com/naviapps/pointer-ges
 
 ## .NET usage
 
-Use the separate recognition and rendering packages from the same successful
-[SDK distribution run](https://github.com/naviapps/sdk-tooling/actions/workflows/check-sdk-distribution.yml).
-Keep both packages in one local NuGet feed. Their native assets support macOS
-ARM64 and x64 and Windows x64, including x64 .NET on Windows 11 ARM64.
+See the [.NET package guide](bindings/dotnet/README.md) for installation, examples
+and Windows integration. Use the [local package checks](#local-net-package-checks)
+to build and verify a candidate for selected runtimes.
 
-The portable recognition and rendering APIs run on macOS and Windows.
-The desktop input and overlay types under the `Windows` namespaces require Windows.
-See [the local package checks](#local-net-package-checks) to build and verify a
-candidate for selected runtimes.
-
-With both packages in a local feed, install them in a .NET 10 project.
-Use the downloaded package version and a fresh package cache for the restore:
-
-```sh
-dotnet package add NaviApps.PointerGestures.Rendering --version 0.1.0 --no-restore
-dotnet restore --source "/path/to/pointer-feed" --packages ./.pointer-packages
-```
-
-Rendering requires the exact matching recognition version. Its CI artifact keeps
-Rendering at the root and Recognition under `dependencies/`. Copy both archives
-into the feed directory. For a recognition-only host, add
-`NaviApps.PointerGestures.Recognition`.
-
-Recognition values use `GestureRecognitionOutput`, `GestureRecognitionStatus`,
-`GestureTrace` and `GesturePoint`; rendering uses the same `GesturePoint` coordinates.
-These replace the former `Output`, `Status`, `Trace` and `Point` types without aliases.
-Update host type annotations and remove aliases for the former point type.
-Properties such as `Status`, `Trace` and `Point`, enum values and ordinary JSON
-property names retain their existing representation. Hosts that store qualified
-CLR type names must update that type metadata when reading their own data.
-`GestureRecognitionStatus`, `GestureTrace` and `SessionReport` compare their
-scalar fields and ordered collection contents. Their constructors and `with`
-assignments copy caller collections into read-only storage.
-
-```csharp
-using NaviApps.PointerGestures.Recognition;
-
-using var matcher = new GesturePatternMatcher();
-matcher.Register([Direction.Right], 42);
-using var engine = new GestureRecognitionEngine(new GestureRecognitionConfiguration(10, 5, Timing.DurationNanoseconds(1), 0));
-engine.UseMatcher(matcher);
-
-void Deliver(GestureRecognitionOutput output)
-{
-    foreach (var effect in output.Effects) Console.WriteLine(effect);
-}
-
-Deliver(engine.Start(0));
-Deliver(engine.Step(new(PointerEventKind.Down, 1, new(0, 0)), 1));
-Deliver(engine.Step(new(PointerEventKind.Moved, 1, new(40, 0)), 2));
-Deliver(engine.Step(new(PointerEventKind.Up, 1, new(40, 0)), 3));
-Deliver(engine.Close(4));
-```
-
-```csharp
-using NaviApps.PointerGestures.Recognition;
-using NaviApps.PointerGestures.Recognition.Windows;
-
-// Live hooks require an explicit opt-in on an interactive Windows desktop.
-if (OperatingSystem.IsWindows() && args.Contains("--desktop-input"))
-{
-    using var matcher = new GesturePatternMatcher();
-    matcher.Register([Direction.Right], 42);
-    using var input = new WindowsRecognizer(new GestureRecognitionConfiguration(10, 5, 1_000_000_000, 0), matcher);
-    input.SetPolicy(true, WindowsModifierKeys.None);
-    using var lifetime = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-    try
-    {
-        while (await input.ReadAsync(lifetime.Token) is { } output)
-            foreach (var effect in output.Effects) Console.WriteLine(effect);
-    }
-    catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
-    finally { input.Stop(); } // Stop owns native input recovery; cancellation only ends this wait.
-}
-```
-
-```csharp
-using NaviApps.PointerGestures.Recognition;
-using NaviApps.PointerGestures.Rendering;
-
-if (GestureGeometryPlanner.TryPlanPattern([Direction.Right, Direction.Down], 96, 64, out var preview, out var error))
-    Console.WriteLine(preview.Path.Count);
-else
-    Console.WriteLine(error);
-
-var converter = new OverlayTraceConverter();
-var captured = new GestureTrace(true, [Direction.Right], [new(0, 0), new(40, 0)], [], null);
-var trace = converter.Convert(captured);
-using var state = new OverlayState(0, timing: new OverlayTiming());
-Console.WriteLine(state.Update(trace, 0).Trace!.Points.Count);
-var pendingHide = state.Update(null, 1);
-var hidden = state.Tick(pendingHide.DeadlineNanoseconds!.Value);
-Console.WriteLine(hidden.Trace is null);
-```
-
-Outputs own their copied data after native frames are freed. Outputs and drag
-effects copy supplied collections into read-only storage and compare them in
-delivery order. Deliver effects in order. Custom input sources can call `GestureRecognitionEngine.PrepareReplacementPress`
-for a finite down of the configured button. Deliver the old input's recovery
-before choosing the new matcher and policy, then submit a still-current press with
-`Step`. An elapsed deadline takes precedence over `Superseded`.
-`GestureRecognitionEngine.Close` returns recovery for host delivery; its
-disposal/finalization only frees memory and cannot inject input. `WindowsRecognizer`
-owns native input recovery through its ordered replay worker and exposes only match/publication
-effects. Its `Stop` reports recovery errors; disposal/finalization stops the worker
-and attempts recovery without reporting failures. Never inject recovery again from its observations.
-
-`GestureRecognitionConfiguration.Validate()` checks portable tuning before you
-create an engine or start input capture. Preflight, engine construction and
-tuning updates report the first invalid threshold or count as an
-`ArgumentOutOfRangeException` with its property name. Rust applies the same
-validation order used by Swift's `GestureRecognizerTuning.validated`. A rejected
-update leaves any captured input and deadline intact. Windows still checks its
-native button and capture limits when starting the adapter.
-Native runtime failures use `WindowsRecognitionException`: inspect `Failure`,
-`NativeErrorCode`, `AcceptedEventCount` and `RequestedEventCount` without parsing
-message text. Reasons distinguish duplicate capture, OS failure, incomplete
-recovery, consumer lag, a stopped worker and a changed replay target. Configuration,
-disposal and asynchronous cancellation retain their standard .NET exceptions.
-Hosts own restart policy; the adapter never retries recovery into a new recipient.
-The portable C engine uses Stop (`PointerGestureRecognitionEvent.kind = 5`) to return owned recovery
-output and `pointer_gesture_recognition_engine_destroy` to release memory without a clock or discarded
-output frame. Frames remain valid after engine destruction. Deliver Stop recovery
-before tearing down the host input adapter.
-`GestureGeometryPlanner` produces native-independent path
-commands and never creates UI or windows. Hosts supply styling and may draw the shared commands themselves or opt into native resource adapters.
-Use `TryPlanPattern` or `TryPlanLiveTrace` when input is editable or a live
-trace might be incomplete. These return the shared Rust `GestureGeometryError`
-reason and no geometry on rejection. The existing `PlanPattern` and
-`PlanLiveTrace` throw `ArgumentException` for rejected input. The Swift
-`GesturePath.planPattern` and `GesturePath.planLiveTrace` report the
-same reasons using `Result`. Both typed APIs report an invalid native result
-if the planner returns an unknown status or a success without a geometry owner.
-
-Preview geometry, overlay traces and presentation updates compare by value in
-Swift and .NET. The .NET geometry record copies command lists supplied through
-its initializer or a `with` expression. Preview and live path commands and
-overlay trace coordinates are held in read-only storage. Trace coordinates
-compare signed zero equally and distinguish an absent tail from a tail at the
-origin.
-
-For live presentation, pass each `Effect.Publish.Trace` through one
-`OverlayTraceConverter` per recognition stream. Deliver effects in order so the
-final visible trace reaches the presentation reducer before the hidden update.
-Hosts handle `DiscardPendingVisibleTrace` separately as an immediate clear.
-
-The optional `pointer-gesture-rendering` Cargo feature `raster` draws shared paths
-into bounded premultiplied RGBA8 images with round joins/caps and antialiasing. It
-uses tiny-skia without PNG/file/network dependencies. Geometry-only consumers keep
-this dependency disabled. Windows rendering opts in and transfers BGRA pixels to
-a layered, nonactivating, click-through window on its own owner thread.
-
-```csharp
-using NaviApps.PointerGestures.Recognition;
-using NaviApps.PointerGestures.Rendering;
-using NaviApps.PointerGestures.Rendering.Windows;
-
-if (OperatingSystem.IsWindows() && args.Contains("--desktop-overlay"))
-{
-    using var overlay = new WindowsOverlay(new(0x3D7CFFFF, 4));
-    overlay.Activate(); // Explicit lifetime; constructor is inactive.
-    overlay.Update(new OverlayTrace([Direction.Right], [new(100, 100), new(200, 100)]));
-    overlay.Clear(); // Immediate cancellation discards pending geometry.
-    overlay.Deactivate(); // Joins and destroys its resources; can activate again.
-}
-```
-
-Do not call overlay methods from input hooks. With native `WindowsRecognizer`,
-drain copied observations on the host loop, clear on `DiscardPendingVisibleTrace`
-and deliver `Publish` effects in order. Null trace schedules final-frame hiding;
-`Clear` discards pending work immediately. `Configure` updates color, stroke, rounding
-and cadence in place, retaining the current HWND, trace and pending final hide. The owner schedules shared cadence, so
-hosts need no presentation timer. See [Windows contracts](https://github.com/naviapps/pointer-gestures/blob/main/docs/WINDOWS.md).
+Earlier type names `Output`, `Status`, `Trace` and `Point` are now
+`GestureRecognitionOutput`, `GestureRecognitionStatus`, `GestureTrace` and
+`GesturePoint`. Update annotations, aliases and any stored CLR type names.
+Ordinary JSON property names and enum values keep their representation.
 
 ## Session measurements and budgets
 

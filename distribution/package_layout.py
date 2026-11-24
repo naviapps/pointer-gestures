@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 KINDS = ("recognition", "rendering")
+DOTNET_README = "bindings/dotnet/README.md"
 
 
 @dataclass(frozen=True)

@@ -7,7 +7,7 @@ from sdk_tooling import nuget
 from sdk_tooling.xcframework import xcframework
 
 from distribution.nuget import MACOS_RIDS
-from distribution.package_layout import KINDS
+from distribution.package_layout import DOTNET_README, KINDS
 from distribution.windows_sdk import RID, WindowsSDK
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,7 +16,7 @@ RUNTIMES = (*MACOS_RIDS, RID)
 
 def pack(root, runtimes):
     license_file = root / "LICENSE"
-    package_files = {"README.md": root / "README.md", "LICENSE": license_file}
+    package_files = {"README.md": root / DOTNET_README, "LICENSE": license_file}
     package_files.update(nuget.retained_notice_files(root / "ThirdParty", "licenses"))
     if "licenses/LICENSE" in package_files:
         raise ValueError("Third-party notice collides with the SDK license")

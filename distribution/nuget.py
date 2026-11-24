@@ -19,7 +19,7 @@ from pathlib import Path
 from sdk_tooling.adapters import load
 from sdk_tooling.xcframework import xcframework
 
-from .package_layout import KINDS, PackageLayout
+from .package_layout import DOTNET_README, KINDS, PackageLayout
 
 MACOS_RIDS = ("osx-arm64", "osx-x64")
 LOCAL_VERSION = re.compile(r"\d+\.\d+\.\d+-[0-9A-Za-z][0-9A-Za-z.-]*")
@@ -131,7 +131,7 @@ class NuGetSDK:
             load("nuget").audit_package(
                 staged_candidate,
                 expected_files={
-                    "README.md": self.root / "README.md",
+                    "README.md": self.root / DOTNET_README,
                     "licenses/LICENSE": self.root / "LICENSE",
                     **notices,
                 },
