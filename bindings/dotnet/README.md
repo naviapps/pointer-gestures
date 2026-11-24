@@ -109,9 +109,9 @@ The managed planner reports invalid native results if the native status
 is unknown or success returns without geometry.
 
 Use one `OverlayTraceConverter` per recognition stream and pass each
-`Effect.Publish.Trace` through it. Deliver effects in order so the final
-visible trace reaches the reducer before it hides. Treat
-`DiscardPendingVisibleTrace` as an immediate clear.
+`Effect.Publish.Trace` through it. Pass a null trace to `OverlayState.Update`
+for a normal hide. When `DiscardPendingVisibleTrace` is set, call
+`OverlayState.Clear` before processing that update.
 
 ```csharp
 using NaviApps.PointerGestures.Recognition;
@@ -159,9 +159,7 @@ if (OperatingSystem.IsWindows() && args.Contains("--desktop-overlay"))
 }
 ```
 
-Deliver publication effects in order. A null trace schedules the final-frame
-hide. Call `Clear` immediately when `DiscardPendingVisibleTrace` is set.
-See the
+The same trace and discard forwarding applies to `WindowsOverlay`. See the
 [Windows overlay contracts](https://github.com/naviapps/pointer-gestures/blob/main/docs/WINDOWS.md#native-desktop-rendering)
 for coordinates, limits and resource lifetime.
 

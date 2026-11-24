@@ -131,12 +131,6 @@ Foreign invalid direction values identify their first input index. Rejected
 registrations preserve commands and captured sessions. Web registration throws
 `GesturePatternError` with `reason` and `index`.
 
-Normal overlay hiding presents queued final geometry briefly. Use portable
-`clear`/`Clear` for cancellation: it discards visible and pending geometry and
-all deadlines while retaining configuration. Swift trace observation carries
-`discardsPendingPresentation`; the AppKit adapter forwards it automatically.
-Cadence inputs contain seconds and lag only; Rust derives nanoseconds internally.
-
 ## Optional macOS overlay resources
 
 ```swift
@@ -291,11 +285,22 @@ Coordinates increase downward. Finite endpoints keep their dominant direction
 when the axis distance exceeds the representable range. Pattern previews and
 live traces project straight segments onto the X/Y axes; platform/view transforms
 belong at adapter boundaries.
-Hidden overlay state is nil. Visible traces require finite points and matching
-point/direction counts. Preserve coalescing, immediate direction/large-motion updates
-and final-trace presentation before hiding. Rust owns these decisions, geometry,
-visibility bounds and deadlines. Native adapters own clocks and graphics/window
-resources; the Windows overlay also schedules its shared reducer on the owner thread.
+Visible traces require at least one direction, finite points and matching
+point/direction counts. Deliver recognition publications in order. Rust's
+presentation reducer coalesces ordinary motion and publishes direction changes
+and rate-limited large movements immediately.
+
+A normal hide publishes any queued final trace first. When a trace is visible,
+its hide deadline is two cadence intervals after the last visible publication.
+A discard clears visible and queued geometry and cancels pending deadlines
+immediately. Interrupted sessions do not emit matches. Configuration and
+previously returned snapshots remain valid after a discard.
+
+Hosts supply cadence in seconds and pointer lag in their coordinate units.
+Reconfiguring cadence preserves visible and queued geometry and recomputes
+deadlines from the last presentation. It returns any newly due update immediately.
+Rust owns the geometry, visibility bounds and nanosecond deadlines. Native
+adapters own clocks and graphics/window resources.
 
 See the Swift API guides linked [above](#documentation), C headers/tests under `crates/*-ffi`, and
 [Windows integration](https://github.com/naviapps/pointer-gestures/blob/main/docs/WINDOWS.md) for ownership and desktop-input requirements.

@@ -69,9 +69,10 @@ deactivate to join it before reactivation.
 
 The bounded, synchronous command boundary must be called outside input hooks.
 The worker owns `OverlayState` deadlines and waits on a kernel event/native messages,
-without idle polling. Deliver recognition `Publish` effects in order and clear
-before delivery when `DiscardPendingVisibleTrace` is true. Null trace preserves
-the shared final-frame cadence; `Clear` discards pending geometry immediately.
+without idle polling. Forward recognition `Publish` effects in order using the
+[shared presentation contract](../README.md#input-and-geometry-contracts).
+Pass a null trace for an ordinary hide and call `Clear` before applying an
+update with `DiscardPendingVisibleTrace`.
 `Deactivate` hides, destroys the window/class and joins, and is idempotent.
 Disposal also joins but cannot report failures; deactivate explicitly when needed.
 

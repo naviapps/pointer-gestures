@@ -29,11 +29,8 @@ negative y values for displays above it. The adapter applies the same transform 
 viewport filtering and SwiftUI drawing. Refresh capability is reported as a value;
 the host chooses how to bound its rendering rate.
 
-`PointerGestureRendering` owns validated traces, conservative bounds, geometry and
-presentation cadence through Rust. `PointerGestureRenderingSwiftUI.GestureOverlayModel`
-delivers those deadlines and preserves the final trace before hiding. AppKit neither
-adds another geometry reducer nor hides windows on trace changes. Windows remain
-ordered and click-through until their explicit display lifetime ends.
+AppKit windows use `GestureOverlayModel` for presentation. Windows remain ordered
+and click-through until their explicit display lifetime ends.
 
 Per-display subscriptions suppress duplicate filtered payloads. A callback may cancel
 itself, add a subscriber, or publish newer recognition state. Newer state invalidates
@@ -62,14 +59,10 @@ Windows overlay. This macOS product is independent of that resource adapter.
 
 ## Immediate Cancellation
 
-Normal hiding retains pending final geometry briefly. Immediate cancellation
-uses Rust's shared clear operation and discards both visible and queued geometry
-and scheduled deadlines. Configuration and previously returned snapshots remain
-valid. The macOS adapter forwards recognition's explicit
-`discardsPendingPresentation` intent; custom adapters must preserve it too.
-Honor `GestureOverlayWindowTraceSource.initiallyDiscardsPendingPresentation`
-when binding a resource, and the Boolean delivered by its `observe` closure on
-later updates. With a SwiftUI model, call `GestureOverlayModel.clear()` for a
-discard and `GestureOverlayModel.update(_:)` for ordinary trace or hide updates.
-Cadence inputs use seconds and coordinate lag only, with normalized nanoseconds
-private to the shared reducer.
+The default resource forwards recognition's discard flag to its SwiftUI model.
+Custom resources must honor
+`GestureOverlayWindowTraceSource.initiallyDiscardsPendingPresentation` when
+binding, and the Boolean from its `observe` closure on later updates. Call
+`GestureOverlayModel.clear()` for a discard and `GestureOverlayModel.update(_:)`
+for ordinary trace or hide updates.
+See [shared presentation behavior](../README.md#input-and-geometry-contracts).

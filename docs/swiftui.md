@@ -54,18 +54,12 @@ if let trace = GestureOverlayTrace(
 }
 ```
 
-`GestureOverlayTrace.init(directions:points:tailPoint:)` fails for empty
-directions, mismatched point counts, or non-finite coordinates. Use `nil` with
-`GestureOverlayModel.update(_:)` to hide the overlay.
-
-The model coalesces ordinary geometry updates to the configured animation
-cadence. Direction changes and large pointer movement remain responsive, and a
-hide preserves the final visible trace briefly enough to render the last update.
-A delayed main-actor timer uses the original deadline without restarting the wait.
+The model delivers the shared reducer's deadlines on the main actor. A delayed
+timer uses the original deadline.
 Use `GestureOverlayModel.configure(_:)` to update host style and cadence in place.
-The model preserves current and pending final geometry. Configuration changes and
-updates from a trace observation callback are applied in order after the current
-publication, including a callback that hides the trace or starts another gesture.
+Configuration changes and updates from a trace observation callback are applied
+in order after the current publication, including a callback that hides the trace
+or starts another gesture.
 
 ## Coordinate Mapping
 
@@ -117,11 +111,7 @@ trace fanout and display rebuilds; SwiftUI-only consumers can supply their own r
 
 ## Immediate Cancellation
 
-Normal hiding through `update(nil)` retains pending final geometry briefly. Use
-`GestureOverlayModel.clear()` for immediate cancellation. It
-uses Rust's shared clear operation and discards both visible and queued geometry
-and scheduled deadlines. Configuration and previously returned snapshots remain
-valid. The AppKit adapter forwards recognition's explicit
-`discardsPendingPresentation` intent; custom adapters must preserve it too.
-Cadence inputs use seconds and coordinate lag only, with normalized nanoseconds
-private to the shared reducer.
+Call `GestureOverlayModel.update(nil)` for a normal hide. Call
+`GestureOverlayModel.clear()` when recognition reports
+`discardsPendingPresentation`. See
+[shared presentation behavior](../README.md#input-and-geometry-contracts).

@@ -39,22 +39,18 @@ The Rust renderer determines whether the directions and endpoints can share the
 previous snapshot's geometry.
 `GestureOverlayTrace.replacingTailPoint(with:)` shares native coordinates and cached
 bounds with a prior immutable trace, avoiding their repeated copies on tail-only motion.
-`GestureOverlayState` coalesces ordinary movement, immediately publishes direction
-changes and rate-limited large movement, and presents the final pending trace before
-hiding. Pass monotonic nanoseconds to `update` and `tick`; schedule the next tick at
-`GestureOverlayUpdate.deadlineNanoseconds`. Snapshots outlive later calls and the
-state object. Access one state serially. Rust clamps clock regressions and saturates
-deadlines; it never creates timers or invokes callbacks.
+Access one `GestureOverlayState` serially. Pass monotonic nanoseconds to `update`
+and `tick` and schedule the next tick at `GestureOverlayUpdate.deadlineNanoseconds`.
+Snapshots outlive later calls and the state object. Rust clamps clock regressions
+and saturates deadlines. Hosts own timers and callbacks.
 Presentation updates compare their change flag, trace value and deadline.
 Returning to the currently presented geometry cancels an older queued movement or hide;
 an unchanged trace can therefore clear the next deadline.
 
 `GestureOverlayTiming` normalizes non-positive, non-finite or unrepresentable
-intervals to 1/60 second and invalid lag distances to 24 points. SwiftUI uses this
-same state and only delivers deadlines and observation. Use
-`GestureOverlayState.configure(timing:nowNanoseconds:)` to change cadence without
-resetting visible/pending geometry. New deadlines remain anchored to the last actual
-presentation, including final hiding; already due work is returned immediately.
+intervals to 1/60 second and invalid lag distances to 24 points. Use
+`GestureOverlayState.configure(timing:nowNanoseconds:)` to change cadence and
+schedule the deadline returned by the shared reducer.
 
 - `GestureOverlayTrace`
 - `GestureOverlayTrace.replacingTailPoint(with:)`
@@ -72,11 +68,6 @@ over each trace's Rust-owned bounds. Filters select payloads without UI or windo
 
 ## Immediate Cancellation
 
-Normal hiding retains pending final geometry briefly. Use
-`GestureOverlayState.clear(nowNanoseconds:)` for immediate cancellation. It
-uses Rust's shared clear operation and discards both visible and queued geometry
-and scheduled deadlines. Configuration and previously returned snapshots remain
-valid. The AppKit adapter forwards recognition's explicit
-`discardsPendingPresentation` intent; custom adapters must preserve it too.
-Cadence inputs use seconds and coordinate lag only, with normalized nanoseconds
-private to the shared reducer.
+Pass `nil` to `update(_:nowNanoseconds:)` for a normal hide. When recognition
+reports `discardsPendingPresentation`, call `clear(nowNanoseconds:)`. See
+[shared presentation behavior](../README.md#input-and-geometry-contracts).
