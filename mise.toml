@@ -26,7 +26,7 @@ run = "mise run sdk-tooling -- quality format --dotnet"
 
 [tasks.sdk-tooling]
 description = "Run the pinned shared SDK checks"
-run = "uvx --from git+https://github.com/naviapps/sdk-tooling.git@320a20c67034f59e29114a416e1066a71c44b43b sdk-tooling"
+run = "uvx --from git+https://github.com/naviapps/sdk-tooling.git@deb36df5eebc2227ffd4cec8790b45fc7947a800 sdk-tooling"
 
 [tasks.check-web-distribution]
 description = "Verify the npm package, reproducibility and browser consumer on Apple Silicon"
