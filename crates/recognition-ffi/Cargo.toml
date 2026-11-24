@@ -7,6 +7,9 @@ publish = false
 repository.workspace = true
 rust-version.workspace = true
 
+[package.metadata.c-bindings]
+module = "CPointerGestureRecognition"
+
 [lib]
 crate-type = ["cdylib"]
 

@@ -1,10 +1,14 @@
-use super::matcher::MatcherHandle;
-pub use pointer_gesture_recognition::Output as Frame;
-pub use pointer_gesture_recognition::Point as ForeignPoint;
 use pointer_gesture_recognition::{
-    Configuration, Direction, Effect, Engine, Event as InputEvent, Point, Status, Trace,
+    Configuration, Direction, Effect, Engine, Event as InputEvent, Matcher, Output, Point, Status,
+    Trace,
 };
 
+pub const POINTER_GESTURE_RECOGNITION_PREPARE_REPLACEMENT_PRESS: u32 = 11;
+
+/// Distances are finite/nonnegative and maximum_points is positive. Raw traces
+/// obey that limit, and replay retains at least the origin and latest location.
+/// Zero durations disable limits. Pass_empty is 0/1, and button is a host-defined
+/// ID. Neither field changes after construction.
 #[repr(C)]
 pub struct Config {
     pub start_distance: f64,
@@ -30,6 +34,17 @@ impl Config {
         })
     }
 }
+/// Kinds: down=1, move=2, up=3, cancel=4, stop=5, start=6, recording=7,
+/// host policy=8, snapshot=9, timer-tick=10, prepare replacement press=11.
+/// Control events ignore pointer coordinates. Preparation expires deadlines
+/// and recovers remaining input as superseded without admitting a new press.
+/// Deliver recovery before resolving new policy and submitting button-down.
+/// Non-finite down/move points pass through. A non-finite up for retained input
+/// consumes the release, interrupts without matching and recovers finite history.
+/// Unretained or unrelated-button releases pass through. Unknown kinds return
+/// null without changing the engine. Now_ns is relative monotonic nanoseconds.
+/// Value is nonzero for recording, or policy bits enabled=1 and modifiers=2.
+/// Tick expires deadlines. Snapshot reads state without expiring input.
 #[repr(C)]
 pub struct Event {
     pub kind: u32,
@@ -82,6 +97,14 @@ pub struct PointsView {
     data: *const Point,
     count: usize,
 }
+/// Last completed retained session. Outcomes: matched=1, recorded=2,
+/// below-threshold=3, unmatched=4, unmatched-prefix=5, cancelled=6, stopped=7,
+/// superseded=8, total-deadline=9, idle-deadline=10, invalid-release=11,
+/// direction-limit=12. Ordinary clicks are below-threshold.
+/// The report measures admitted finite input. It retains no coordinates and
+/// confirms neither OS replay nor command execution. Generation wraps locally
+/// and never returns zero. Rejected_direction zero means none. The report
+/// persists across snapshots and new presses until another session completes.
 #[repr(C)]
 pub struct SessionReportView {
     present: u32,
@@ -101,7 +124,7 @@ pub struct SessionReportView {
 /// A non-null frame is live. Returned direction bytes borrow that frame.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pointer_gesture_recognition_frame_session_report(
-    frame: *const Frame,
+    frame: *const Output,
 ) -> SessionReportView {
     let report = unsafe { frame.as_ref() }.and_then(|frame| frame.last_session.as_ref());
     match report {
@@ -133,6 +156,12 @@ pub unsafe extern "C" fn pointer_gesture_recognition_frame_session_report(
         },
     }
 }
+/// Disposition: pass-through=0, consume=1, control/no physical input=2.
+/// Stage: idle=0, pending threshold=1, capturing=2.
+/// Failure: none=0, disabled=1, modifiers=2, expired=3.
+/// Input_generation is zero when idle, otherwise a nonzero wrapping session ID.
+/// Discard_visible clears a host-coalesced visible update after interruption.
+/// When deadline_present is set, schedule a tick at absolute deadline_ns.
 #[repr(C)]
 pub struct FrameView {
     disposition: u32,
@@ -163,6 +192,11 @@ pub struct TraceView {
     tail_present: u32,
     tail: Point,
 }
+/// Deliver in order: click=1, complete drag=2, held drag start=3, release=4,
+/// host command match=5, trace/status publication=6. A held drag start leaves the
+/// real release to pass through. Match_value accepts every uint64_t, including zero.
+/// Only fields for the current kind are meaningful. Publication status can differ
+/// from the final frame. Trace views borrow their containing frame.
 #[repr(C)]
 pub struct EffectView {
     kind: u32,
@@ -284,7 +318,7 @@ impl EffectView {
         view
     }
 }
-fn frame_view(frame: &Frame) -> FrameView {
+fn frame_view(frame: &Output) -> FrameView {
     FrameView {
         disposition: frame.disposition as u32,
         ready: u32::from(frame.status.ready),
@@ -307,6 +341,7 @@ fn frame_view(frame: &Frame) -> FrameView {
     }
 }
 
+/// Return an owned engine, or null for invalid configuration.
 #[unsafe(no_mangle)]
 pub extern "C" fn pointer_gesture_recognition_engine_create(config: Config) -> *mut Engine {
     config
@@ -314,6 +349,8 @@ pub extern "C" fn pointer_gesture_recognition_engine_create(config: Config) -> *
         .and_then(|c| Engine::new(c).ok())
         .map_or(std::ptr::null_mut(), |e| Box::into_raw(Box::new(e)))
 }
+/// Result: unchanged=0, updated=1, invalid configuration or immutable policy change=2.
+///
 /// # Safety
 /// The engine is live and exclusively accessed; button and empty-matcher policy are immutable.
 #[unsafe(no_mangle)]
@@ -342,14 +379,16 @@ pub unsafe extern "C" fn pointer_gesture_recognition_engine_destroy(engine: *mut
         drop(unsafe { Box::from_raw(engine) });
     }
 }
+/// Frames own their storage and remain valid after later calls and engine destruction.
+///
 /// # Safety
-/// The engine is live/exclusive. The caller owns and must free the returned frame.
+/// The engine is live and exclusive. Destroy each owned frame exactly once.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pointer_gesture_recognition_engine_step(
     engine: *mut Engine,
     event: Event,
-) -> *mut Frame {
-    let output = if event.kind == 11 {
+) -> *mut Output {
+    let output = if event.kind == POINTER_GESTURE_RECOGNITION_PREPARE_REPLACEMENT_PRESS {
         unsafe { &mut *engine }.prepare_replacement_press(event.now_ns)
     } else {
         let Some(input) = event.decode() else {
@@ -359,26 +398,28 @@ pub unsafe extern "C" fn pointer_gesture_recognition_engine_step(
     };
     Box::into_raw(Box::new(output))
 }
+/// Retain the immutable trie in O(1). Active input keeps its captured matcher.
+///
 /// # Safety
 /// The engine is live/exclusive; the matcher is live and immutable for this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pointer_gesture_recognition_engine_use_matcher(
     engine: *mut Engine,
-    matcher: *const MatcherHandle,
+    matcher: *const Matcher,
 ) {
     unsafe { &mut *engine }.use_matcher(unsafe { &*matcher });
 }
 /// # Safety
 /// The frame is live. Returned immutable views borrow it until destruction.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn pointer_gesture_recognition_frame_view(frame: *const Frame) -> FrameView {
+pub unsafe extern "C" fn pointer_gesture_recognition_frame_view(frame: *const Output) -> FrameView {
     frame_view(unsafe { &*frame })
 }
 /// # Safety
 /// The frame is live; effect views borrow the same frame, including single points.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pointer_gesture_recognition_frame_effect(
-    frame: *const Frame,
+    frame: *const Output,
     index: usize,
 ) -> EffectView {
     unsafe { &*frame }
@@ -389,7 +430,7 @@ pub unsafe extern "C" fn pointer_gesture_recognition_frame_effect(
 /// # Safety
 /// Destroy a null or live owned frame exactly once, after all readers finish.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn pointer_gesture_recognition_frame_destroy(frame: *mut Frame) {
+pub unsafe extern "C" fn pointer_gesture_recognition_frame_destroy(frame: *mut Output) {
     if !frame.is_null() {
         drop(unsafe { Box::from_raw(frame) });
     }

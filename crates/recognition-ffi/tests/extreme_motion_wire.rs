@@ -10,7 +10,7 @@ pub mod engine {
         use super::*;
         use crate::matcher::*;
 
-        struct OwnedFrame(*mut Frame);
+        struct OwnedFrame(*mut Output);
 
         impl Drop for OwnedFrame {
             fn drop(&mut self) {

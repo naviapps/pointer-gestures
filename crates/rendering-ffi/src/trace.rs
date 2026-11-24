@@ -1,6 +1,8 @@
 use crate::input::{buffer, directions};
 use pointer_gesture_rendering::{Bounds, OverlayTrace, Point};
 
+/// An immutable trace owns directions, coordinates and cached bounds.
+/// Clones share Rust data. Views borrow the trace. Destroy each owned handle once.
 pub struct TraceHandle {
     pub(crate) trace: OverlayTrace,
 }
@@ -24,6 +26,10 @@ pub struct TraceConversion {
     pub reused_geometry: u32,
 }
 
+/// Convert a recognition snapshot without retaining raw history. Hidden or invalid
+/// input returns a null handle and zero reuse. When reuse is set, directions and
+/// points share the previous trace's storage.
+///
 /// # Safety
 /// Previous must be null or live. Visible snapshot buffers must be readable for
 /// their counts during the call. The returned handle is independently owned.
@@ -90,6 +96,9 @@ pub unsafe extern "C" fn pointer_gesture_rendering_trace_create(
         Box::into_raw(Box::new(TraceHandle::new(t)))
     })
 }
+/// Replace only the tail while sharing immutable coordinates and bounds.
+/// A non-finite tail or tail_present outside 0/1 returns null.
+///
 /// # Safety
 /// Trace must be null or live/immutable. Returned handle is independently owned.
 #[unsafe(no_mangle)]

@@ -4,11 +4,11 @@ SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-a
 ARTIFACTS := $(CURDIR)/Artifacts
 
 .DEFAULT_GOAL := check
-.PHONY: check check-source check-ci-source test-managed test-rust check-distribution test-distribution-tools check-docs check-native test-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release clean format lint test
+.PHONY: check check-source check-ci-source test-managed test-rust check-distribution test-distribution-tools check-docs check-header check-native generate-header test-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release clean format lint test
 
 check: check-source test test-consumer
 
-check-source: lint test-rust test-ffi test-managed
+check-source: lint check-header test-rust test-ffi test-managed
 
 check-ci-source: check-source
 	cargo fetch --locked --manifest-path bindings/web/rust/Cargo.toml
@@ -31,14 +31,20 @@ test-distribution-tools:
 check-docs:
 	RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --locked --offline
 
-check-native:
+check-header:
+	$(SDK_TOOLING) c-headers check
+
+generate-header:
+	$(SDK_TOOLING) c-headers generate
+
+check-native: check-header
 	$(SDK_TOOLING) xcframework --verify
 
 test-rust:
 	cargo test --workspace --locked --offline
 	cargo clippy --workspace --all-targets --locked --offline -- -D warnings
 
-native:
+native: generate-header
 	$(SDK_TOOLING) xcframework
 
 # The maintained C callers use ASan; the prebuilt Rust frameworks do not.

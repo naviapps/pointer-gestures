@@ -1,8 +1,5 @@
 use pointer_gesture_recognition::{Direction, Matcher, PatternError, validate_pattern};
 
-/// Opaque foreign handle. Clones retain the safe core's copy-on-write snapshot.
-pub type MatcherHandle = Matcher;
-
 #[repr(C)]
 pub struct Lookup {
     pub(crate) present: u32,
@@ -17,7 +14,10 @@ impl Lookup {
     }
 }
 
-/// Foreign validation result: zero means valid; an absent index is u32::MAX.
+/// Codes: valid=0, empty=1, too long=2, consecutive equal=3, invalid direction=4,
+/// null/unaligned buffer=5. Index is zero-based for codes 3/4 and UINT32_MAX otherwise.
+/// Validation checks length before reading buffers, then invalid direction codes
+/// before repeated runs. Rejecting a registration preserves the matcher.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct PatternValidation {
@@ -80,8 +80,11 @@ unsafe fn pattern<'a>(data: *const u32, count: usize) -> Option<&'a [Direction]>
     unsafe { validated_pattern(data, count) }.ok()
 }
 
+/// Allocate an owned matcher. Cloning shares its immutable trie in O(1).
+/// Reads may run concurrently. Mutation requires an exclusive handle and copies
+/// shared storage. Destroy each owned handle once.
 #[unsafe(no_mangle)]
-pub extern "C" fn pointer_gesture_recognition_matcher_create() -> *mut MatcherHandle {
+pub extern "C" fn pointer_gesture_recognition_matcher_create() -> *mut Matcher {
     Box::into_raw(Box::new(Matcher::default()))
 }
 
@@ -89,25 +92,27 @@ pub extern "C" fn pointer_gesture_recognition_matcher_create() -> *mut MatcherHa
 /// The matcher is live and immutable during this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pointer_gesture_recognition_matcher_clone(
-    matcher: *const MatcherHandle,
-) -> *mut MatcherHandle {
+    matcher: *const Matcher,
+) -> *mut Matcher {
     Box::into_raw(Box::new(unsafe { &*matcher }.clone()))
 }
 
 /// # Safety
 /// The matcher is null or an exclusively owned live handle, destroyed once.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn pointer_gesture_recognition_matcher_destroy(matcher: *mut MatcherHandle) {
+pub unsafe extern "C" fn pointer_gesture_recognition_matcher_destroy(matcher: *mut Matcher) {
     if !matcher.is_null() {
         drop(unsafe { Box::from_raw(matcher) });
     }
 }
 
+/// Reject empty/invalid patterns and copy direction buffers into trie storage.
+///
 /// # Safety
 /// The matcher is live and exclusively accessed. The buffer is readable for count elements.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pointer_gesture_recognition_matcher_register(
-    matcher: *mut MatcherHandle,
+    matcher: *mut Matcher,
     data: *const u32,
     count: usize,
     value: u64,
@@ -124,7 +129,7 @@ pub unsafe extern "C" fn pointer_gesture_recognition_matcher_register(
 /// The matcher is live/immutable. The buffer is readable for count elements.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pointer_gesture_recognition_matcher_match(
-    matcher: *const MatcherHandle,
+    matcher: *const Matcher,
     data: *const u32,
     count: usize,
 ) -> Lookup {
@@ -137,16 +142,18 @@ pub unsafe extern "C" fn pointer_gesture_recognition_matcher_match(
 /// The matcher is live and immutable during this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pointer_gesture_recognition_matcher_is_empty(
-    matcher: *const MatcherHandle,
+    matcher: *const Matcher,
 ) -> u32 {
     u32::from(unsafe { &*matcher }.is_empty())
 }
 
+/// Remove an exact registration. Missing/invalid patterns return present=0.
+///
 /// # Safety
 /// The matcher is live/exclusive. The pattern buffer is readable during this call.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pointer_gesture_recognition_matcher_remove(
-    matcher: *mut MatcherHandle,
+    matcher: *mut Matcher,
     data: *const u32,
     count: usize,
 ) -> Lookup {
@@ -155,9 +162,11 @@ pub unsafe extern "C" fn pointer_gesture_recognition_matcher_remove(
     )
 }
 
+/// Clear mutable registrations. Captured matcher and engine snapshots remain valid.
+///
 /// # Safety
-/// The matcher is live and exclusively accessed. Existing snapshots remain valid.
+/// The matcher is live and exclusively accessed.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn pointer_gesture_recognition_matcher_clear(matcher: *mut MatcherHandle) {
+pub unsafe extern "C" fn pointer_gesture_recognition_matcher_clear(matcher: *mut Matcher) {
     unsafe { &mut *matcher }.clear();
 }

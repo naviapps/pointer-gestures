@@ -3,10 +3,15 @@ mod engine;
 mod matcher;
 mod startup;
 #[cfg(windows)]
+/// cbindgen:ignore
 mod windows;
 pub use engine::*;
 pub use matcher::*;
+use pointer_gesture_recognition::Point;
 
+pub const POINTER_GESTURE_RECOGNITION_ABI_VERSION: u32 = 8u32;
+
+/// Direction zero means equal axis deltas. Valid zero means non-finite input.
 #[repr(C)]
 pub struct Movement {
     pub valid: u32,
@@ -15,13 +20,15 @@ pub struct Movement {
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn pointer_gesture_recognition_abi_version() -> u32 {
-    8
+    POINTER_GESTURE_RECOGNITION_ABI_VERSION
 }
 
+/// Direction runs are bounded to 1..4096 and captured at button-down.
 #[unsafe(no_mangle)]
 pub extern "C" fn pointer_gesture_recognition_validate_direction_limit(value: i64) -> u32 {
     u32::from(value > 0 && pointer_gesture_recognition::validate_direction_limit(value as usize))
 }
+/// Finite endpoints can yield an infinite maximum axis delta and a cardinal direction.
 #[unsafe(no_mangle)]
 pub extern "C" fn pointer_gesture_recognition_movement(
     sx: f64,
@@ -47,10 +54,13 @@ pub extern "C" fn pointer_gesture_recognition_movement(
     )
 }
 
+/// Saturating ceil to nanoseconds. Non-positive or non-finite seconds return zero.
 #[unsafe(no_mangle)]
 pub extern "C" fn pointer_gesture_recognition_duration_nanoseconds(seconds: f64) -> u64 {
     pointer_gesture_recognition::duration_nanoseconds(seconds)
 }
+/// First invalid field: start=1, change=2, total=3, idle=4, points=5, flags=6.
+/// Duration flags are total=1 and idle=2. Absent durations are ignored.
 #[unsafe(no_mangle)]
 pub extern "C" fn pointer_gesture_recognition_validate_tuning(
     start: f64,
@@ -74,17 +84,18 @@ pub extern "C" fn pointer_gesture_recognition_validate_tuning(
 }
 
 #[unsafe(no_mangle)]
-/// Sample replay points into an exclusive caller-owned output buffer.
+/// Sample a replay path uniformly with both endpoints and a minimum limit of two.
+/// Returns the required count. A null output with zero capacity queries that count.
 ///
 /// # Safety
 /// When capacity suffices, input must contain count initialized points and output
-/// must hold the returned point count. Buffers may not overlap. A size query does
-/// not dereference either buffer.
+/// must hold the returned point count. Buffers may not overlap. A size query
+/// does not dereference either buffer, and empty input permits null points.
 pub unsafe extern "C" fn pointer_gesture_recognition_replay_points(
-    points: *const ForeignPoint,
+    points: *const Point,
     count: usize,
     maximum: usize,
-    output: *mut ForeignPoint,
+    output: *mut Point,
     capacity: usize,
 ) -> usize {
     let required = pointer_gesture_recognition::replay_point_count(count, maximum);
@@ -99,6 +110,7 @@ pub unsafe extern "C" fn pointer_gesture_recognition_replay_points(
     required
 }
 
+/// Clamp negative elapsed components, truncate fractions and saturate overflow.
 #[unsafe(no_mangle)]
 pub extern "C" fn pointer_gesture_recognition_elapsed_nanoseconds(
     seconds: i64,

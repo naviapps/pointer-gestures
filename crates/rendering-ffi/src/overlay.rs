@@ -1,6 +1,8 @@
 use crate::trace::TraceHandle;
 use pointer_gesture_rendering::{OverlayState, OverlayTiming, OverlayUpdate};
 
+/// An owned presentation result remains valid after later calls and state destruction.
+/// The frame's trace is borrowed. Clone it before destroying the frame.
 pub struct OverlayFrame {
     trace: Option<TraceHandle>,
     changed: bool,
@@ -30,6 +32,11 @@ pub extern "C" fn pointer_gesture_rendering_overlay_configuration(
 ) -> OverlayTiming {
     OverlayTiming::new(interval_seconds, maximum_point_lag)
 }
+/// Create a serial reducer and normalize cadence from interval_seconds and lag.
+/// Supply monotonic nanoseconds, schedule returned deadlines and publish changed
+/// frames. Clock regressions are clamped. Null traces mean hidden and Boolean
+/// outputs use 0/1.
+///
 /// # Safety
 /// Initial trace is null (hidden) or live; it is cloned, never retained by pointer.
 #[unsafe(no_mangle)]
@@ -59,6 +66,8 @@ pub unsafe extern "C" fn pointer_gesture_rendering_overlay_update(
         ))
     })
 }
+/// Immediately discard visible and queued geometry and pending deadlines.
+///
 /// # Safety
 /// OverlayState must be live and exclusively accessed. The frame is newly owned.
 #[unsafe(no_mangle)]
@@ -81,6 +90,9 @@ pub unsafe extern "C" fn pointer_gesture_rendering_overlay_tick(
         Box::into_raw(Box::new(o.tick(now_ns).into()))
     })
 }
+/// Recompute pending cadence from the last actual presentation, retaining trace
+/// and pending final hiding. The host still owns its clock and window.
+///
 /// # Safety
 /// OverlayState must be live and exclusively accessed. The frame is newly owned.
 #[unsafe(no_mangle)]

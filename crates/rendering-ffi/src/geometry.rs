@@ -3,6 +3,7 @@ use pointer_gesture_rendering::{
     Bounds, Command, CornerStyle, Geometry, GeometryError, Path, Point,
 };
 
+/// Kind: move=1, line=2, cubic=3, close=4. Unused points are zero.
 #[repr(C)]
 pub struct NativeCommand {
     kind: u32,
@@ -14,6 +15,8 @@ pub struct GeometryHandle {
     path: Vec<NativeCommand>,
     arrowhead: Vec<NativeCommand>,
 }
+/// Code: success=0, empty=1, point-count=2, non-finite=3, buffer=4, direction=5.
+/// An error returns null geometry. Each success owns one geometry.
 #[repr(C)]
 pub struct GeometryResult {
     pub code: u32,
@@ -149,7 +152,7 @@ pub unsafe extern "C" fn pointer_gesture_rendering_pattern(
 
 /// # Safety
 /// `geometry` is null or a live immutable handle. Its command views remain valid
-/// until destruction, which must not overlap any reader.
+/// until destruction, which must not overlap any reader. Copy views before host callbacks.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn pointer_gesture_rendering_geometry_view(
     geometry: *const GeometryHandle,

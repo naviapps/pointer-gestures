@@ -319,7 +319,7 @@
         },
         "inputs": {
           "Cargo.toml": "b7c566f2db8c015931f833e593b86247d1e5d084b7186baeaecf540b73372d3a",
-          "crates/rendering-ffi/Cargo.toml": "9871f586ef8b062bbbd6ecaea751c06d7cb0a0c775a66ed32de0d24f7dd6b054"
+          "crates/rendering-ffi/Cargo.toml": "c957c37bb2e302e10869a9a604419c23c774f4e0daba1c1b0164a0f77a8ced7e"
         },
         "name": "pointer-gesture-rendering-ffi",
         "source": "workspace",
@@ -611,7 +611,7 @@
       "Cargo.lock": "cf7f31c8774152ec3a55101a24ef8aa5811b4ec4ed48725f76d8645caf99dcb7",
       "Cargo.toml": "b7c566f2db8c015931f833e593b86247d1e5d084b7186baeaecf540b73372d3a",
       "crates/recognition/Cargo.toml": "15eed4819b13b45aaa9fd0c78330e189ad1c163cd5769bc99fb6f6635ff781cc",
-      "crates/rendering-ffi/Cargo.toml": "9871f586ef8b062bbbd6ecaea751c06d7cb0a0c775a66ed32de0d24f7dd6b054",
+      "crates/rendering-ffi/Cargo.toml": "c957c37bb2e302e10869a9a604419c23c774f4e0daba1c1b0164a0f77a8ced7e",
       "crates/rendering/Cargo.toml": "9fe782963a3b79f6af5cc1855e451a9de0801c2577da7d2d0f6b3404c1928572",
       "rust-toolchain.toml": "d13306be0ecda81ce779baa290ffb417380d525928477f16200884b5169cca33"
     }
@@ -672,7 +672,7 @@
     "ThirdParty/windows-link-0.2.1/license-mit": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
     "ThirdParty/windows-sys-0.61.2/license-apache-2.0": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
     "ThirdParty/windows-sys-0.61.2/license-mit": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
-    "crates/recognition-ffi/Cargo.toml": "797046f29cf83346eaa8e8c743e61c588589a8a5e560f81e5273e38e342e0084",
+    "crates/recognition-ffi/Cargo.toml": "52686ea4166b02d5c7521b347d83f8bff172ed97809ab80e50bdbc8c7986d275",
     "crates/recognition-windows/Cargo.toml": "e7af6d178e438c3807516500a48de565a007d82fddd4ab62a5ee88c8007063a5",
     "crates/recognition/Cargo.toml": "15eed4819b13b45aaa9fd0c78330e189ad1c163cd5769bc99fb6f6635ff781cc",
     "crates/recognition/src/configuration.rs": "74a3de71b8d14bc0bea655e01408b8327835129bb2eb0fae7af0ba3e6b237d40",
@@ -685,14 +685,14 @@
     "crates/recognition/src/replay.rs": "c82dc4b51b58409797b151db14e169e71a68c5143df291710ea87a4ecf24df7d",
     "crates/recognition/src/session.rs": "cfab9b2c72597bf43e061c1be35abb310540ca52ca6fba820b5c4961fbd28481",
     "crates/recognition/src/startup.rs": "892250564af9f2922bae765907435d1c64045fab4b3f3530b55169fd888f2494",
-    "crates/rendering-ffi/Cargo.toml": "9871f586ef8b062bbbd6ecaea751c06d7cb0a0c775a66ed32de0d24f7dd6b054",
-    "crates/rendering-ffi/include/pointer_gesture_rendering.h": "edf19afb669054d82fef8ac5e948085a6569b56f7faa2cb0b700d75c855c2b0f",
+    "crates/rendering-ffi/Cargo.toml": "c957c37bb2e302e10869a9a604419c23c774f4e0daba1c1b0164a0f77a8ced7e",
+    "crates/rendering-ffi/include/pointer_gesture_rendering.h": "a432fe4901d74213247ef8ef25f0e6cd3132eb26c6a291b6dbd4e242eff3eb24",
     "crates/rendering-ffi/module.modulemap": "deb490ccb8fc53b3ed187aed2b42df5dd090e3d7ef46707746d95d93668daee3",
-    "crates/rendering-ffi/src/geometry.rs": "f3f6c8ca2df8130bc0ceb3f19165d2e01f8f3fc48d8d363b793336a9b5c66389",
+    "crates/rendering-ffi/src/geometry.rs": "a6f42e0b1e5b48a8943b129422d8ac5fa3109c050ecdfd1bbb45435fcd9eaa13",
     "crates/rendering-ffi/src/input.rs": "2068125b9862151567da8a848ecdaa24b950455230253549b46d11996972a172",
-    "crates/rendering-ffi/src/lib.rs": "1db9a369814d8b0c4c43fa15fdeb843dda954a5e500223987b7feb04781d9ded",
-    "crates/rendering-ffi/src/overlay.rs": "388c91dd00ef3888cbfd1a790f8accd16f5bf34aa41116e76501b3e3cf8bb54c",
-    "crates/rendering-ffi/src/trace.rs": "365609555baca855888ddaa6232b4e0d2d9610849f897548bb04804dcf3fa8a9",
+    "crates/rendering-ffi/src/lib.rs": "188a378b2599e7ac901884b92f109d613d4bfc5dbe06499f95231a26b1b58cc4",
+    "crates/rendering-ffi/src/overlay.rs": "769e6725fe7b2d403e25215bce953a2afcca8b6a71aa792ba56a5fa67c9cb9d1",
+    "crates/rendering-ffi/src/trace.rs": "12b7d0dc790d1bacde3955e3882e28f27e5e9a70504e106efc7f03c6fd2f3b08",
     "crates/rendering-windows/Cargo.toml": "622794583771a92d1af08105e969841998968b07fabc985111be1b4361140e45",
     "crates/rendering/Cargo.toml": "9fe782963a3b79f6af5cc1855e451a9de0801c2577da7d2d0f6b3404c1928572",
     "crates/rendering/src/lib.rs": "1f5a16f3cbd7ea23169422c9dada787f255cbce27be2e6d90cc44a91a10b3bbc",
@@ -710,12 +710,12 @@
     "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Headers": "036ae9446c4f0c59046671d1d96e2de4f606b340d8a5c1927b2d51bc293e0365",
     "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Modules": "278b6b2d8f8418e2e4877a67a109b6e3865174e4fa7405870a643e95cbc2f783",
     "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Resources": "c213ee8e9c523538d862da3e5716b64bf090f6a1be08914954ae33cfbda7dbb2",
-    "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Versions/A/CPointerGestureRendering": "8f4b40913f77f6fd63c84f5805787042eb7cc9e94a0221e1c6fc16acc935df0f",
-    "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Versions/A/Headers/pointer_gesture_rendering.h": "edf19afb669054d82fef8ac5e948085a6569b56f7faa2cb0b700d75c855c2b0f",
+    "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Versions/A/CPointerGestureRendering": "099ac8f287277413f9bb7312f81e4b907c665c456b9c56597e61a3696357a1fc",
+    "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Versions/A/Headers/pointer_gesture_rendering.h": "a432fe4901d74213247ef8ef25f0e6cd3132eb26c6a291b6dbd4e242eff3eb24",
     "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Versions/A/Modules/module.modulemap": "deb490ccb8fc53b3ed187aed2b42df5dd090e3d7ef46707746d95d93668daee3",
     "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Versions/A/Resources/Info.plist": "004517cd7b2c49fc4dd43d2908c8d27a08d994a977418df40cc91732938ae6ff",
     "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Versions/A/Resources/ThirdPartyNotices.txt": "cde22783d05ae6e76612c78971282b0f2bb5043eb2583662981d5507634bf45b",
-    "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Versions/A/_CodeSignature/CodeResources": "12d34bb65c1fb0300e2bd969fea675e872bbcc2fbbb42e0e97e600ae33d1d16f",
+    "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Versions/A/_CodeSignature/CodeResources": "9e97045b75cef99cb8462eb3cc5d835e4480377388de72a814e3f48481655cea",
     "Artifacts/CPointerGestureRendering.xcframework/macos-arm64_x86_64/CPointerGestureRendering.framework/Versions/Current": "ee26006c07174064a7bed9b283a8b016d74a295e05c4e23a1846538d69b23c5f"
   },
   "productionSources": [
