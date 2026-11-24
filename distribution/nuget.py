@@ -133,7 +133,7 @@ class NuGetSDK:
                 staged_candidate,
                 expected_files={
                     "README.md": self.root / DOTNET_README,
-                    "licenses/LICENSE": self.root / "LICENSE",
+                    "LICENSE": self.root / "LICENSE",
                     **notices,
                 },
                 runtime_files=runtime_files,

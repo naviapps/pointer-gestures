@@ -16,12 +16,11 @@ RUNTIMES = (*MACOS_RIDS, RID)
 
 def pack(root, runtimes):
     c_headers.prepare_generated(root)
-    license_file = root / "LICENSE"
-    package_files = {"README.md": root / DOTNET_README, "LICENSE": license_file}
-    package_files.update(nuget.retained_notice_files(root / "ThirdParty", "licenses"))
-    if "licenses/LICENSE" in package_files:
-        raise ValueError("Third-party notice collides with the SDK license")
-    package_files["licenses/LICENSE"] = license_file
+    package_files = {
+        "README.md": root / DOTNET_README,
+        "LICENSE": root / "LICENSE",
+        **nuget.retained_notice_files(root / "ThirdParty", "licenses"),
+    }
 
     packages = []
     for kind in KINDS:

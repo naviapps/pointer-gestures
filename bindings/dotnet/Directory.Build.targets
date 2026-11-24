@@ -13,8 +13,7 @@
     <NativePackageRuntime Include="$(NativePackageRuntimePattern)" />
     <None Include="@(NativePackageRuntime)" Pack="true" PackagePath="runtimes/" />
     <None Include="$(MSBuildThisFileDirectory)../../ThirdParty/**/*" Exclude="$(MSBuildThisFileDirectory)../../ThirdParty/**/.DS_Store;$(MSBuildThisFileDirectory)../../ThirdParty/**/registry-notices.json" Pack="true" PackagePath="licenses/" />
-    <None Include="$(MSBuildThisFileDirectory)../../LICENSE" Pack="true" PackagePath="licenses/" />
-    <None Include="$(MSBuildThisFileDirectory)../../LICENSE" Condition="'$(SdkNativeRuntimeAssets)' != ''" Pack="true" PackagePath="/" />
+    <None Include="$(MSBuildThisFileDirectory)../../LICENSE" Pack="true" PackagePath="/" />
     <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
   <Target Name="RequireNativeCandidates" BeforeTargets="GenerateNuspec" Condition="'$(NativeSDKKind)' != '' And '$(IsPackable)' == 'true'">
