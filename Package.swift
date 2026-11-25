@@ -33,11 +33,16 @@ let package = Package(
         "PointerGestureRendering", "PointerGestureRenderingSwiftUI", "PointerGestureRecognition",
       ]),
     .testTarget(
-      name: "PointerGestureRecognitionTests", dependencies: ["PointerGestureRecognition"]),
+      name: "PointerGestureRecognitionTests",
+      dependencies: ["CPointerGestureRecognition", "PointerGestureRecognition"]),
     .testTarget(
       name: "PointerGestureRecognitionMacOSTests",
       dependencies: ["PointerGestureRecognition", "PointerGestureRecognitionMacOS"]),
-    .testTarget(name: "PointerGestureRenderingTests", dependencies: ["PointerGestureRendering"]),
+    .testTarget(
+      name: "PointerGestureRenderingTests",
+      dependencies: [
+        "CPointerGestureRendering", "PointerGestureRecognition", "PointerGestureRendering",
+      ]),
     .testTarget(
       name: "PointerGestureRenderingMacOSTests",
       dependencies: [
