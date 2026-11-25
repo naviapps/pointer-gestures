@@ -3,13 +3,13 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "playwright": "1.65.0"
+    "playwright": "1.65.1"
   },
   "browserGate": {
     "fallbackReason": "Browser plugin not available",
-    "chromiumRevision": "1254",
-    "chromiumVersion": "158.0.8127.18",
-    "release": "https://github.com/microsoft/playwright/releases/tag/v1.65.0",
-    "browserManifest": "https://raw.githubusercontent.com/microsoft/playwright/v1.65.0/packages/playwright-core/browsers.json"
+    "chromiumRevision": "1255",
+    "chromiumVersion": "159.0.8154.6",
+    "release": "https://github.com/microsoft/playwright/releases/tag/v1.65.1",
+    "browserManifest": "https://raw.githubusercontent.com/microsoft/playwright/v1.65.1/packages/playwright-core/browsers.json"
   }
 }

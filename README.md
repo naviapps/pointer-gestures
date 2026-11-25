@@ -37,7 +37,7 @@ persistence and style. Optional macOS and Windows adapters own overlay resources
 | .NET `NaviApps.PointerGestures.Rendering`   | Copied geometry, presentation state and optional native Windows overlay            |
 | Web `@naviapps/pointer-gestures`            | Shared recognition/geometry through an independent Wasm adapter                    |
 
-The workspace pins Rust 1.99.1. Swift requires 6.3 or later on macOS 26 or later; .NET
+The workspace pins Rust 1.100.0 for builds. Swift requires 6.3 or later on macOS 26 or later; .NET
 requires version 10. Windows SDK packages target x64. The Windows 11 ARM64 worker
 uses the approved x64 .NET SDK and records emulated execution. Universal
 macOS artifacts include arm64 and x86_64; compilation is separate from native

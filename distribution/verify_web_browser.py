@@ -145,7 +145,7 @@ def main():
                 for name, path in (("node", node), ("npm", npm))
             }
             require(
-                versions == {"node": "v24.22.1", "npm": "11.19.1"},
+                versions == {"node": "v26.13.1", "npm": "11.20.0"},
                 "Expected the pinned Node and npm versions",
             )
             summary["versions"] = versions

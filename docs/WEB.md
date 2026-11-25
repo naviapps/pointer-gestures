@@ -164,8 +164,8 @@ mise exec -- cargo fetch --manifest-path bindings/web/rust/Cargo.toml --locked
 mise run check-web-distribution
 ```
 
-The hosted macOS distribution job runs this task with mise 2026.11.12.
-The task selects the official ARM64 `wasm-bindgen` 0.2.104 archive with a
+The hosted macOS distribution job uses the mise version pinned in SDK Tooling.
+The task selects the official ARM64 `wasm-bindgen` 0.2.130 archive with a
 pinned SHA-256 and installs it only when needed.
 For individual commands, prepare the matching `wasm-bindgen-cli` and the pinned
 Rust, Node.js and TypeScript tools yourself:
@@ -256,12 +256,12 @@ overlays, console/page/network health, capture/release events, recognition/repor
 state and Canvas pixels at 1000×760 and 390×844. Screenshots and traces support
 later visual inspection; pixel assertions do not replace that inspection.
 
-The gate uses Playwright 1.65.0 and Chromium 158.0.8127.18,
-revision 1254, pinned by `fixtures/acceptance/browser/package-lock.json` and the
+The gate uses Playwright 1.65.1 and Chromium 159.0.8154.6,
+revision 1255, pinned by `fixtures/acceptance/browser/package-lock.json` and the
 package's checked browser descriptor. The public npm integrity pins came from
-the [official registry](https://registry.npmjs.org/playwright/1.65.0); the browser
-version is documented in the [official release](https://github.com/microsoft/playwright/releases/tag/v1.65.0)
-and [browser manifest](https://raw.githubusercontent.com/microsoft/playwright/v1.65.0/packages/playwright-core/browsers.json).
+the [official registry](https://registry.npmjs.org/playwright/1.65.1); the browser
+version is documented in the [official release](https://github.com/microsoft/playwright/releases/tag/v1.65.1)
+and [browser manifest](https://raw.githubusercontent.com/microsoft/playwright/v1.65.1/packages/playwright-core/browsers.json).
 Provisioning runs `npm ci --ignore-scripts` and the official
 `playwright install --no-shell chromium` in fresh job-local directories. It installs
 no global tools, OS dependencies, security policy or base-image changes. The

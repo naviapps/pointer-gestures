@@ -20,7 +20,7 @@ web = ["dep:wasm-bindgen"]
 [dependencies]
 pointer-gesture-recognition = { path = "../../../crates/recognition" }
 pointer-gesture-rendering = { path = "../../../crates/rendering" }
-wasm-bindgen = { version = "=0.2.104", optional = true, default-features = false, features = [
+wasm-bindgen = { version = "=0.2.130", optional = true, default-features = false, features = [
   "std",
 ] }
 

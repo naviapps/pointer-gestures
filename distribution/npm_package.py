@@ -14,7 +14,7 @@ from sdk_tooling.adapters import load
 
 from distribution.source_identity import source_identity
 
-VERSION = "0.2.104"
+VERSION = "0.2.130"
 PORTABLE_CRATES = ("recognition", "rendering")
 
 
