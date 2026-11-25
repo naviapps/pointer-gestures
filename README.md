@@ -333,9 +333,9 @@ for both the native and Web workspaces.
 
 ### Distribution verification
 
-The [distribution plan](sdk-distribution.toml) defines the hosted acceptance
-commands. For local native or Web distribution checks, run the relevant Make
-targets through mise. The targets use the pinned [SDK Tooling](https://github.com/naviapps/sdk-tooling)
+The `[distribution]` section of [`sdk-tooling.toml`](sdk-tooling.toml) defines the
+hosted acceptance commands. For local native or Web distribution checks, run
+the relevant Make targets through mise. The targets use the pinned [SDK Tooling](https://github.com/naviapps/sdk-tooling)
 CLI and fixtures in this checkout.
 
 ```sh
@@ -356,7 +356,8 @@ headers and Swift module maps locally. The checkout ignores these copies.
 the bundled XCFrameworks. `make test-ffi` compiles the generated portable headers,
 and the Windows build checks compile the generated Windows headers.
 When native sources change, run `mise exec -- make native` to regenerate the
-files and rebuild the two macOS frameworks declared in [`native.toml`](native.toml).
+files and rebuild the two macOS frameworks declared in the `[native]` section of
+[`sdk-tooling.toml`](sdk-tooling.toml).
 `make check-distribution`
 checks the existing native receipts, the distribution fixtures, a Swift release
 build and Rust API documentation.

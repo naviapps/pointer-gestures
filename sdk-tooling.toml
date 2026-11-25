@@ -1,0 +1,71 @@
+[[native.artifacts]]
+id = "recognition"
+ffi = "crates/recognition-ffi"
+symbol_prefix = "pointer_gesture_recognition_"
+minimum_macos = "26.0"
+receipt = "CPointerGestureRecognition.build.json"
+notice_packages = ["pointer-gesture-recognition-ffi", "pointer-gesture-rendering-ffi"]
+
+[[native.artifacts]]
+id = "rendering"
+ffi = "crates/rendering-ffi"
+symbol_prefix = "pointer_gesture_rendering_"
+minimum_macos = "26.0"
+receipt = "CPointerGestureRendering.build.json"
+notice_packages = ["pointer-gesture-recognition-ffi", "pointer-gesture-rendering-ffi"]
+
+[checks.swift]
+inputs = ["Package.swift", "Sources", "Tests", "Artifacts"]
+executables = [
+  "RecognitionConsumer",
+  "RecognitionMacOSConsumer",
+  "RenderingConsumer",
+  "RenderingSwiftUIConsumer",
+  "RenderingMacOSConsumer",
+]
+verify_dependencies = true
+
+[checks.nuget]
+package_id = "NaviApps.PointerGestures.Rendering"
+fixtures = ["fixtures/consumers/dotnet/Recognition.cs", "fixtures/consumers/dotnet/Rendering.cs"]
+windows_x64 = true
+
+[checks.windows_bindings]
+packages = ["pointer-gesture-recognition-ffi", "pointer-gesture-rendering-ffi"]
+projects = [
+  "bindings/dotnet/tests/NaviApps.PointerGestures.Recognition.Tests/NaviApps.PointerGestures.Recognition.Tests.csproj",
+  "bindings/dotnet/tests/NaviApps.PointerGestures.Rendering.Tests/NaviApps.PointerGestures.Rendering.Tests.csproj",
+]
+
+[distribution.macos]
+commands = [
+  ["cargo", "fetch", "--locked"],
+  ["make", "check-distribution", "check-rust-consumer", "check-c-consumer", "check-dotnet"],
+  ["rustup", "target", "add", "wasm32-unknown-unknown"],
+  ["cargo", "fetch", "--locked", "--manifest-path", "bindings/web/rust/Cargo.toml"],
+  [
+    "mise",
+    "run",
+    "check-web-distribution",
+    "--",
+    "BROWSER_ARTIFACTS={temp}/pointer-gestures-artifacts",
+  ],
+]
+
+[distribution.windows]
+commands = [
+  ["rustup", "install", "--no-self-update"],
+  ["sdk-tooling", "python", "-m", "unittest", "discover", "-s", "distribution/tests"],
+  [
+    "sdk-tooling",
+    "windows",
+    "-m",
+    "distribution.verify_native_host",
+    "--architecture",
+    "x86_64",
+    "--export-native",
+  ],
+]
+
+[distribution.nuget]
+pack = "distribution/pack_nuget.py"
