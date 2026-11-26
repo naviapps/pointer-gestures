@@ -17,10 +17,10 @@ uv = { version = "0.13.10", os = ["macos", "linux"] }
 
 [tasks.sdk-tooling]
 description = "Run the pinned shared SDK checks"
-run = "uvx --from git+https://github.com/naviapps/sdk-tooling.git@21410b8dd9b7771b9cc234017837c781ba9d4c4b sdk-tooling"
+run = "uvx --from git+https://github.com/naviapps/sdk-tooling.git@cf8488951a12565b80edb24dda5300021563d954 sdk-tooling"
 
 [tasks.check-web-distribution]
 description = "Verify the npm package, reproducibility and browser consumer on Apple Silicon"
 tools."github:wasm-bindgen/wasm-bindgen" = { version = "0.2.130", asset_pattern = "wasm-bindgen-0.2.130-aarch64-apple-darwin.tar.gz", checksum = "sha256:b90ddb9357f584b1af897d58ad77e4cce2b48fc17e2a967bc249a87f72809444" }
 # The nested SDK Tooling task resets PATH to its own configured tools.
-run = 'WASM_BINDGEN_BIN="$(command -v wasm-bindgen)" make check-web check-web-reproducibility check-web-browser'
+run = 'WASM_BINDGEN_BIN="$(command -v wasm-bindgen)" make check-web-distribution'

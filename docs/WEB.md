@@ -166,7 +166,11 @@ mise run check-web-distribution
 
 The hosted macOS distribution job uses the mise version pinned in SDK Tooling.
 The task selects the official ARM64 `wasm-bindgen` 0.2.130 archive with a
-pinned SHA-256 and installs it only when needed.
+pinned SHA-256 and installs it only when needed. It builds the committed package
+at two independent source paths and compares every output. The Node tests, npm
+consumer, TypeScript checks and Chromium fixture then use the same verified
+package from the first build. The task uses temporary build paths.
+Commit changes to the browser fixture before running this combined check.
 For individual commands, prepare the matching `wasm-bindgen-cli` and the pinned
 Rust, Node.js and TypeScript tools yourself:
 
@@ -238,8 +242,8 @@ This checks `.web-build/package` and writes receipts, screenshots, traces and
 logs under `web-browser` in the evidence directory. GitHub Actions can choose a
 fresh path under `RUNNER_TEMP` for evidence. The browser runs headless.
 
-Without `BROWSER_ARTIFACTS`, Make creates a temporary evidence directory and prints
-its path in the command. A previously verified SDK package can be checked by
+Without `BROWSER_ARTIFACTS`, the verifier creates a temporary evidence directory and
+prints its path. A previously verified SDK package can be checked by
 running `mise run sdk-tooling -- python -m distribution.verify_web_browser`
 with `--artifacts`, `--package`, `--source-revision` and `--provenance-sha256`.
 The receipt records the commits of the fixture and the SDK. The browser gate

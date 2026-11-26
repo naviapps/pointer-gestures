@@ -41,8 +41,7 @@ def main():
     parser.add_argument(
         "--artifacts",
         type=Path,
-        required=True,
-        help="Write evidence under this absolute path outside the repository",
+        help="Write evidence under this absolute path outside the repository (default: a temporary directory)",
     )
     parser.add_argument(
         "--package", type=Path, help="Generated package (default: .web-build/package)"
@@ -58,17 +57,15 @@ def main():
     )
     temporary = Path(os.environ.get("RUNNER_TEMP") or tempfile.gettempdir())
     artifacts = args.artifacts
-    require(temporary.is_absolute() and artifacts.is_absolute(), "Expected absolute paths")
-    temporary, artifacts = temporary.resolve(), artifacts.resolve()
     require(
-        not temporary.is_relative_to(root) and not artifacts.is_relative_to(root),
-        "Expected temporary and artifact paths outside source",
+        temporary.is_absolute() and (artifacts is None or artifacts.is_absolute()),
+        "Expected absolute paths",
     )
+    temporary = temporary.resolve()
+    require(not temporary.is_relative_to(root), "Expected a temporary path outside source")
     package = (args.package or root / ".web-build/package").resolve(strict=True)
-    output = artifacts / "web-browser"
     require(
-        not temporary.is_relative_to(package) and not output.is_relative_to(package),
-        "Expected temporary and artifact paths outside the SDK package",
+        not temporary.is_relative_to(package), "Expected a temporary path outside the SDK package"
     )
     source = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     require(source == os.environ.get("GITHUB_SHA", source), "Checkout differs from Actions source")
@@ -104,7 +101,16 @@ def main():
     node_path, npm_path = shutil.which("node"), shutil.which("npm")
     require(node_path and npm_path, "Run with the Node and npm versions selected by mise")
     node, npm, python = Path(node_path), Path(npm_path), Path(sys.executable)
+    if artifacts is None:
+        artifacts = Path(tempfile.mkdtemp(prefix="pointer-browser-evidence-", dir=temporary))
+    artifacts = artifacts.resolve()
+    output = artifacts / "web-browser"
+    require(
+        not artifacts.is_relative_to(root) and not output.is_relative_to(package),
+        "Expected a browser evidence path outside source and the SDK package",
+    )
     output.mkdir(parents=True)
+    print(f"Browser acceptance evidence: {output}", flush=True)
     before = {str(path): digest(path) for path in (node, npm, python)}
     summary = {
         "result": "failed",

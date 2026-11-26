@@ -1,10 +1,10 @@
 SDK_TOOLING ?= mise run sdk-tooling --
-BROWSER_ARTIFACTS ?= $(shell mktemp -d)
+BROWSER_OPTIONS = $(if $(BROWSER_ARTIFACTS),--artifacts "$(BROWSER_ARTIFACTS)")
 SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
 ARTIFACTS := $(CURDIR)/Artifacts
 
 .DEFAULT_GOAL := check
-.PHONY: check check-source check-ci-source test-managed test-rust check-distribution test-distribution-tools check-docs check-header check-native generate-header test-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser build build-release clean format lint test
+.PHONY: check check-source check-ci-source test-managed test-rust check-distribution test-distribution-tools check-docs check-header check-native generate-header test-consumer check-rust-consumer check-c-consumer native test-ffi check-dotnet check-windows check-web check-web-source check-web-types check-web-reproducibility check-web-browser check-web-distribution build build-release clean format lint test
 
 check: check-source test test-consumer
 
@@ -67,8 +67,10 @@ check-windows:
 # Web tools and dependencies remain independent of native consumer validation.
 check-web: check-web-source
 	$(SDK_TOOLING) python -m distribution.npm_package
-	node --test bindings/web/tests/*.test.mjs
-	node distribution/verify_web_consumer.mjs
+	node distribution/verify_web_consumer.mjs --binding-tests
+
+check-web-distribution: check-web-source
+	$(SDK_TOOLING) python -m distribution.verify_web_reproducibility --with-consumers $(BROWSER_OPTIONS)
 
 check-web-source:
 	cargo test --manifest-path bindings/web/rust/Cargo.toml --locked --offline
@@ -81,7 +83,7 @@ check-web-reproducibility:
 	$(SDK_TOOLING) python -m distribution.verify_web_reproducibility
 
 check-web-browser:
-	$(SDK_TOOLING) python -m distribution.verify_web_browser --artifacts "$(BROWSER_ARTIFACTS)"
+	$(SDK_TOOLING) python -m distribution.verify_web_browser $(BROWSER_OPTIONS)
 
 build:
 	swift build $(SWIFT_STRICT_FLAGS)

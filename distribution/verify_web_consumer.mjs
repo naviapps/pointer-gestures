@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cp, mkdtemp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, mkdir, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,11 +10,22 @@ import { fileURLToPath } from "node:url";
 const fixtures = resolve(dirname(fileURLToPath(import.meta.url)), "../fixtures/consumers/web");
 const args = process.argv.slice(2);
 const typesOnly = args[0] === "--types-only";
-if (typesOnly) args.shift();
-assert.ok(args.length <= 1, "Usage: verify_web_consumer.mjs [--types-only] [generated-package]");
+const bindingTests = args[0] === "--binding-tests";
+if (typesOnly || bindingTests) args.shift();
+assert.ok(args.length <= 1, "Usage: verify_web_consumer.mjs [--types-only | --binding-tests] [generated-package]");
 const directory = resolve(
   args[0] ?? process.env.POINTER_GESTURES_WEB_PACKAGE ?? ".web-build/package",
 );
+if (bindingTests) {
+  const tests = resolve(dirname(fileURLToPath(import.meta.url)), "../bindings/web/tests");
+  const suites = (await readdir(tests))
+    .filter((name) => name.endsWith(".test.mjs")).sort().map((name) => join(tests, name));
+  assert.ok(suites.length > 0, "No Web binding tests found");
+  execFileSync(process.execPath, ["--test", ...suites], {
+    env: { ...process.env, POINTER_GESTURES_WEB_PACKAGE: directory },
+    stdio: "inherit",
+  });
+}
 const userEnvironment = {};
 for (const name of ["HOME", "CFFIXED_USER_HOME"]) {
   if (process.env[name] !== undefined) userEnvironment[name] = process.env[name];
