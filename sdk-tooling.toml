@@ -15,7 +15,7 @@ receipt = "CPointerGestureRendering.build.json"
 notice_packages = ["pointer-gesture-recognition-ffi", "pointer-gesture-rendering-ffi"]
 
 [checks.swift]
-inputs = ["Package.swift", "Sources", "Tests", "Artifacts"]
+inputs = ["Package.swift", "Sources", "Artifacts"]
 executables = [
   "RecognitionConsumer",
   "RecognitionMacOSConsumer",

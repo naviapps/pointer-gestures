@@ -34,13 +34,8 @@ def pack(root, runtimes):
                 runtimes=runtimes,
                 sources=[packages[0].parent] if packages else [],
                 input_files=[
-                    root / name
-                    for name in (
-                        "bindings/dotnet/Directory.Build.props",
-                        "bindings/dotnet/Directory.Build.targets",
-                        "bindings/dotnet/src/Shared/SnapshotValues.cs",
-                        "distribution/pack_nuget.py",
-                    )
+                    root / "bindings/dotnet/src/Shared/SnapshotValues.cs",
+                    root / "distribution/pack_nuget.py",
                 ],
                 windows_output_root=sdk.native,
                 windows_source_inputs=sdk.sources,
