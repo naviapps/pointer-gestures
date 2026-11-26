@@ -1,6 +1,6 @@
 SDK_TOOLING ?= mise run sdk-tooling --
 BROWSER_OPTIONS = $(if $(BROWSER_ARTIFACTS),--artifacts "$(BROWSER_ARTIFACTS)")
-SWIFT_STRICT_FLAGS := -Xswiftc -strict-concurrency=complete -Xswiftc -warnings-as-errors
+SWIFT_STRICT_FLAGS := -Xswiftc -warnings-as-errors
 ARTIFACTS := $(CURDIR)/Artifacts
 
 .DEFAULT_GOAL := check

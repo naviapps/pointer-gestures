@@ -17,7 +17,7 @@ uv = { version = "0.13.10", os = ["macos", "linux"] }
 
 [tasks.sdk-tooling]
 description = "Run the pinned shared SDK checks"
-run = "uvx --from git+https://github.com/naviapps/sdk-tooling.git@cf8488951a12565b80edb24dda5300021563d954 sdk-tooling"
+run = "uvx --from git+https://github.com/naviapps/sdk-tooling.git@8eac75dd86d19cdbb86f3fdde78b0a76076be869 sdk-tooling"
 
 [tasks.check-web-distribution]
 description = "Verify the npm package, reproducibility and browser consumer on Apple Silicon"

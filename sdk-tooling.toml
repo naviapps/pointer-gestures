@@ -59,6 +59,7 @@ commands = [
   [
     "sdk-tooling",
     "windows",
+    "--driver-prepares-headers",
     "-m",
     "distribution.verify_native_host",
     "--architecture",

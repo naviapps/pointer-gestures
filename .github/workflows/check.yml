@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   check:
-    uses: naviapps/sdk-tooling/.github/workflows/check-sdk.yml@cf8488951a12565b80edb24dda5300021563d954
+    uses: naviapps/sdk-tooling/.github/workflows/check-sdk.yml@8eac75dd86d19cdbb86f3fdde78b0a76076be869
     with:
       platform: ${{ inputs.platform || 'all' }}
       package-documentation: docs/WEB.md
