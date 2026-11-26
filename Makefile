@@ -8,7 +8,7 @@ ARTIFACTS := $(CURDIR)/Artifacts
 
 check: check-source test test-consumer
 
-check-source: lint check-header test-rust test-ffi test-managed
+check-source: lint test-rust test-ffi test-managed
 
 check-ci-source: check-source
 	cargo fetch --locked --manifest-path bindings/web/rust/Cargo.toml

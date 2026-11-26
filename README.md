@@ -321,8 +321,8 @@ mise exec -- cargo fetch --locked
 mise exec -- make check
 ```
 
-Run `mise run lint` before builds or `mise run format` to format owned source.
-These tasks use the public SDK Tooling revision pinned in
+Run `mise exec -- make lint` or `mise exec -- make format` for source checks and formatting.
+These targets use the public SDK Tooling revision pinned in
 [`mise.toml`](mise.toml). The first run downloads it without GitHub credentials.
 The quality checks exclude vendored code, native artifacts and original notices.
 
@@ -374,11 +374,6 @@ documentation.
 Each macOS framework contains the original notice bodies verbatim in
 `Resources/ThirdPartyNotices.txt`. Original notices and Rust runtime provenance
 remain under `ThirdParty/`; native packages retain the required notices for their runtimes.
-
-Use Git on main. Keep related edits together, validate them, then
-publish one coherent main unit. Preserve published commits and consumer pins.
-Retain upstream runtime notices with redistributed artifacts. Keep product source,
-QA data and credentials outside this repository.
 
 ### Local .NET package checks
 
