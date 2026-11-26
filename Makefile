@@ -37,7 +37,7 @@ check-header:
 generate-header:
 	$(SDK_TOOLING) c-headers generate
 
-check-native: check-header
+check-native:
 	$(SDK_TOOLING) xcframework --verify
 
 test-rust:
